@@ -14,6 +14,8 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/kernel.h>
 
+#include <zephyr/drivers/rtc.h>
+
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/conn.h>
@@ -27,11 +29,7 @@
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/net_event.h>
 
-#define WIFI_SSID "CoFu5"
-#define WIFI_PASS "surfboard1234"
-
-// #define MAX_BUF_LEN 64
-// #define STACK_SIZE 1024
+static const struct device *rtc_dev = DEVICE_DT_GET(DT_ALIAS(rtc));
 
 
 static K_SEM_DEFINE(wifi_connected, 0, 1);
@@ -121,16 +119,16 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb, uint32_t
     }
 }
 
-void wifi_connect(void)
+bool wifi_connect(uint8_t* ssid, ssize_t len_ssid, uint8_t* pass, ssize_t len_pass)
 {
     struct net_if *iface = net_if_get_default();
 
     struct wifi_connect_req_params wifi_params = {0};
 
-    wifi_params.ssid = WIFI_SSID;
-    wifi_params.psk = WIFI_PASS;
-    wifi_params.ssid_length = strlen(WIFI_SSID);
-    wifi_params.psk_length = strlen(WIFI_PASS);
+    wifi_params.ssid = ssid;
+    wifi_params.psk = pass;
+    wifi_params.ssid_length = len_ssid;
+    wifi_params.psk_length = len_pass;
     wifi_params.channel = WIFI_CHANNEL_ANY;
     wifi_params.security = WIFI_SECURITY_TYPE_PSK;
     wifi_params.band = WIFI_FREQ_BAND_2_4_GHZ; 
@@ -141,7 +139,9 @@ void wifi_connect(void)
     if (net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &wifi_params, sizeof(struct wifi_connect_req_params)))
     {
         printk("WiFi Connection Request Failed\n");
+        return false;
     }
+    return true;
 }
 
 void wifi_status(void)
@@ -176,8 +176,6 @@ void wifi_disconnect(void)
     }
 }
 
-#define BT
-#ifdef BT
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
@@ -188,6 +186,7 @@ static const struct bt_data ad[] = {
 
 // Definir una variable global para almacenar el valor de la característica
 static char wifi_ssid[50];
+static bool wifi_ssid_set = false;
 
 // Función para manejar las solicitudes de escritura en la característica WiFi
 static ssize_t write_wifi(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -200,6 +199,7 @@ static ssize_t write_wifi(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
     memset(wifi_ssid, 0, 50);
     memcpy(wifi_ssid + offset, buf, len);
+    wifi_ssid_set = true;
 
     return len;
 }
@@ -245,6 +245,8 @@ static struct {
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 static struct bt_gatt_read_params read_params;
 
+static struct rtc_time hora = { 0 };
+
 uint8_t cts_sync_read(struct bt_conn *conn, uint8_t err,
 				    struct bt_gatt_read_params *params,
 				    //const void *data, u16_t length)
@@ -258,7 +260,20 @@ uint8_t cts_sync_read(struct bt_conn *conn, uint8_t err,
 
 	memcpy(&m_read_buf.datetime + m_read_buf.offset, data, length);
 	m_read_buf.offset += length;
-  printk("%d:%d:%d\n", m_read_buf.datetime.hours, m_read_buf.datetime.minutes, m_read_buf.datetime.seconds);
+    printk("%d:%d:%d\n", m_read_buf.datetime.hours, m_read_buf.datetime.minutes, m_read_buf.datetime.seconds);
+
+    hora.tm_sec = m_read_buf.datetime.seconds;
+    hora.tm_min = m_read_buf.datetime.minutes;
+    hora.tm_hour = m_read_buf.datetime.hours;
+    hora.tm_mday = m_read_buf.datetime.day;
+    hora.tm_mon = m_read_buf.datetime.month;
+    hora.tm_year = m_read_buf.datetime.year;
+    hora.tm_wday = m_read_buf.datetime.day_of_week;
+    hora.tm_yday = -1;
+    hora.tm_isdst = -1;
+    hora.tm_nsec = 0;
+
+    rtc_set_time(rtc_dev, &hora);
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -344,7 +359,6 @@ static void hrs_notify(void)
 	bt_hrs_notify(heartrate);
 }
 
-#endif
 
 int main(void)
 {
@@ -353,7 +367,6 @@ int main(void)
 	printk("Iniciando app\n");
     memset(wifi_ssid, 0, 50);
 
-#ifdef BT
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
@@ -363,7 +376,6 @@ int main(void)
 	bt_ready();
 
 	bt_conn_auth_cb_register(&auth_cb_display);
-#endif
 
 	net_mgmt_init_event_callback(&wifi_cb, wifi_mgmt_event_handler,
                                  NET_EVENT_WIFI_CONNECT_RESULT | NET_EVENT_WIFI_DISCONNECT_RESULT);
@@ -374,23 +386,29 @@ int main(void)
     net_mgmt_add_event_callback(&ipv4_cb);
 
 
-    wifi_connect();
-    k_sem_take(&wifi_connected, K_FOREVER);
-    wifi_status();
-    k_sem_take(&ipv4_address_obtained, K_FOREVER);
-    printk("Ready...\n\n");
+    // wifi_connect();
+    // k_sem_take(&wifi_connected, K_FOREVER);
+    // wifi_status();
+    // k_sem_take(&ipv4_address_obtained, K_FOREVER);
+    // printk("Ready...\n\n");
 
 	while (1) {
 		k_sleep(K_SECONDS(1));
-        printk("lalala %s\n", wifi_ssid);
+        // printk("lalala %s\n", wifi_ssid);
+        memset(&hora, 0, sizeof(hora));
+        rtc_get_time(rtc_dev, &hora);
+        printk("Hora: %02d:%02d:%02d del %02d/%02d/%d\n", hora.tm_hour, hora.tm_min, hora.tm_sec, hora.tm_mday, hora.tm_mon, hora.tm_year);
+        if(wifi_ssid_set){
+            if(wifi_connect(wifi_ssid, strlen(wifi_ssid), "surfboard1234", 13)){
+                wifi_ssid_set = false;
+            }
+        }
 
-#ifdef BT
 		/* Heartrate measurements simulation */
 		hrs_notify();
 
 		// /* Battery level simulation */
 		bas_notify();
-#endif
 	}
 	return 0;
 }
