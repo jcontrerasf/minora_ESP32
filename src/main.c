@@ -186,6 +186,43 @@ static const struct bt_data ad[] = {
 		      BT_UUID_16_ENCODE(BT_UUID_DIS_VAL))
 };
 
+// Definir una variable global para almacenar el valor de la característica
+static char wifi_ssid[50];
+
+// Función para manejar las solicitudes de escritura en la característica WiFi
+static ssize_t write_wifi(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+                          const void *buf, uint16_t len, uint16_t offset,
+                          uint8_t flags)
+{
+    if (offset + len > sizeof(wifi_ssid)) {
+        return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+    }
+
+    memset(wifi_ssid, 0, 50);
+    memcpy(wifi_ssid + offset, buf, len);
+
+    return len;
+}
+
+#define WIFI_UUID_SERVICE 0xb8, 0x39, 0x34, 0xf8, 0xaf, 0x02, 0x3d, 0xad,\
+                          0xda, 0x4c, 0xab, 0x78, 0xc3, 0x64, 0xa9, 0x35
+
+//35a963c3-78ab-4cda-ad3d-02aff83439b8
+
+#define BT_UUID_WIFI   BT_UUID_DECLARE_128(WIFI_UUID_SERVICE)
+
+BT_GATT_SERVICE_DEFINE(wifi_svc,
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_ESS),
+
+  /* WiFi */
+  BT_GATT_CHARACTERISTIC(BT_UUID_WIFI,
+             BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_WRITE,
+			       NULL, write_wifi, wifi_ssid),
+
+	BT_GATT_CUD("SSID Wi-Fi", BT_GATT_PERM_READ)
+);
+
 typedef struct {
 	uint16_t year;
 	uint8_t month;
@@ -314,6 +351,7 @@ int main(void)
 	int err;
 
 	printk("Iniciando app\n");
+    memset(wifi_ssid, 0, 50);
 
 #ifdef BT
 	err = bt_enable(NULL);
@@ -344,7 +382,7 @@ int main(void)
 
 	while (1) {
 		k_sleep(K_SECONDS(1));
-        printk("lalala\n");
+        printk("lalala %s\n", wifi_ssid);
 
 #ifdef BT
 		/* Heartrate measurements simulation */
