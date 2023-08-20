@@ -14,7 +14,6 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/kernel.h>
 
-#include <zephyr/drivers/rtc.h>
 #include <time.h>
 #include <zephyr/sys/timeutil.h>
 
@@ -24,20 +23,12 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/services/bas.h>
-#include <zephyr/bluetooth/services/hrs.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/net_event.h>
 
-LOG_MODULE_REGISTER(rtc_dev);
-static const struct device *rtc_dev = DEVICE_DT_GET(DT_ALIAS(rtc));
-
-
-static K_SEM_DEFINE(wifi_connected, 0, 1);
-static K_SEM_DEFINE(ipv4_address_obtained, 0, 1);
 
 static struct net_mgmt_event_callback wifi_cb;
 static struct net_mgmt_event_callback ipv4_cb;
@@ -53,7 +44,6 @@ static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
     else
     {
         printk("Connected\n");
-        k_sem_give(&wifi_connected);
     }
 }
 
@@ -68,7 +58,6 @@ static void handle_wifi_disconnect_result(struct net_mgmt_event_callback *cb)
     else
     {
         printk("Disconnected\n");
-        k_sem_take(&wifi_connected, K_NO_WAIT);
     }
 }
 
@@ -98,7 +87,6 @@ static void handle_ipv4_result(struct net_if *iface)
                                 buf, sizeof(buf)));
         }
 
-        k_sem_give(&ipv4_address_obtained);
 }
 
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event, struct net_if *iface)
@@ -226,29 +214,24 @@ static ssize_t write_pass(struct bt_conn *conn, const struct bt_gatt_attr *attr,
     return len;
 }
 
+#define BT_UUID_WIFI_SVC         BT_UUID_DECLARE_16(0x1820) //Internet Protocol Support service
 
-#define WIFI_SSID_UUID_CHAR 0xb8, 0x39, 0x34, 0xf8, 0xaf, 0x02, 0x3d, 0xad,\
-                            0xda, 0x4c, 0xab, 0x78, 0xc3, 0x64, 0xa9, 0x35
-//35a963c3-78ab-4cda-ad3d-02aff83439b8
-#define BT_UUID_WIFI_SSID   BT_UUID_DECLARE_128(WIFI_SSID_UUID_CHAR)
+#define BT_UUID_WIFI_SSID_CHRC   BT_UUID_DECLARE_16(0x2b37) //Registered User
 
-#define WIFI_PASS_UUID_CHAR 0xb8, 0x3a, 0x34, 0xf8, 0xaf, 0x02, 0x3d, 0xad,\
-                            0xda, 0x4c, 0xab, 0x78, 0xc3, 0x64, 0xa9, 0x35
-//35a963c3-78ab-4cda-ad3d-02aff83439b8
-#define BT_UUID_WIFI_PASS   BT_UUID_DECLARE_128(WIFI_PASS_UUID_CHAR)
+#define BT_UUID_WIFI_PASS_CHRC   BT_UUID_DECLARE_16(0x2a02) //Peripheral Privacy Flag
 
 BT_GATT_SERVICE_DEFINE(wifi_svc,
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_ESS),
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_WIFI_SVC),
 
   /* WiFi */
-  BT_GATT_CHARACTERISTIC(BT_UUID_WIFI_SSID,
+  BT_GATT_CHARACTERISTIC(BT_UUID_WIFI_SSID_CHRC,
              BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
 			       BT_GATT_PERM_WRITE,
 			       NULL, write_ssid, wifi_ssid),
 
 	BT_GATT_CUD("SSID Wi-Fi", BT_GATT_PERM_READ),
 
-  BT_GATT_CHARACTERISTIC(BT_UUID_WIFI_PASS,
+  BT_GATT_CHARACTERISTIC(BT_UUID_WIFI_PASS_CHRC,
              BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
 			       BT_GATT_PERM_WRITE,
 			       NULL, write_pass, wifi_pass),
@@ -268,7 +251,6 @@ typedef struct {
 	uint8_t adjust_reason;
 } cts_datetime_t;
 
-//cts_datetime_t datetime;
 
 static struct {
 	int offset;
@@ -371,32 +353,6 @@ static struct bt_conn_auth_cb auth_cb_display = {
 	.cancel = auth_cancel,
 };
 
-static void bas_notify(void)
-{
-	uint8_t battery_level = bt_bas_get_battery_level();
-
-	battery_level--;
-
-	if (!battery_level) {
-		battery_level = 100U;
-	}
-
-	bt_bas_set_battery_level(battery_level);
-}
-
-static void hrs_notify(void)
-{
-	static uint8_t heartrate = 90U;
-
-	/* Heartrate measurements simulation */
-	heartrate++;
-	if (heartrate == 160U) {
-		heartrate = 90U;
-	}
-
-	bt_hrs_notify(heartrate);
-}
-
 
 int main(void)
 {
@@ -404,6 +360,7 @@ int main(void)
 
 	printk("Iniciando app\n");
     memset(wifi_ssid, 0, 50);
+    memset(wifi_pass, 0, 50);
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -415,12 +372,6 @@ int main(void)
 
 	bt_conn_auth_cb_register(&auth_cb_display);
 
-    if (rtc_dev == NULL) {
-        LOG_ERR("RTC device not found\n");
-        return 0;
-    }
-    err = device_is_ready(rtc_dev);
-    LOG_INF("RTC dev: %d\n", err);
 
 	net_mgmt_init_event_callback(&wifi_cb, wifi_mgmt_event_handler,
                                  NET_EVENT_WIFI_CONNECT_RESULT | NET_EVENT_WIFI_DISCONNECT_RESULT);
@@ -447,11 +398,6 @@ int main(void)
             }
         }
 
-		/* Heartrate measurements simulation */
-		hrs_notify();
-
-		// /* Battery level simulation */
-		bas_notify();
 	}
 	return 0;
 }
