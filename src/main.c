@@ -192,8 +192,11 @@ static const struct bt_data ad[] = {
 static char wifi_ssid[50];
 static bool wifi_ssid_set = false;
 
+static char wifi_pass[50];
+static bool wifi_pass_set = false;
+
 // Función para manejar las solicitudes de escritura en la característica WiFi
-static ssize_t write_wifi(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static ssize_t write_ssid(struct bt_conn *conn, const struct bt_gatt_attr *attr,
                           const void *buf, uint16_t len, uint16_t offset,
                           uint8_t flags)
 {
@@ -208,23 +211,49 @@ static ssize_t write_wifi(struct bt_conn *conn, const struct bt_gatt_attr *attr,
     return len;
 }
 
-#define WIFI_UUID_SERVICE 0xb8, 0x39, 0x34, 0xf8, 0xaf, 0x02, 0x3d, 0xad,\
-                          0xda, 0x4c, 0xab, 0x78, 0xc3, 0x64, 0xa9, 0x35
+static ssize_t write_pass(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+                          const void *buf, uint16_t len, uint16_t offset,
+                          uint8_t flags)
+{
+    if (offset + len > sizeof(wifi_pass)) {
+        return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+    }
 
+    memset(wifi_pass, 0, 50);
+    memcpy(wifi_pass + offset, buf, len);
+    wifi_pass_set = true;
+
+    return len;
+}
+
+
+#define WIFI_SSID_UUID_CHAR 0xb8, 0x39, 0x34, 0xf8, 0xaf, 0x02, 0x3d, 0xad,\
+                            0xda, 0x4c, 0xab, 0x78, 0xc3, 0x64, 0xa9, 0x35
 //35a963c3-78ab-4cda-ad3d-02aff83439b8
+#define BT_UUID_WIFI_SSID   BT_UUID_DECLARE_128(WIFI_SSID_UUID_CHAR)
 
-#define BT_UUID_WIFI   BT_UUID_DECLARE_128(WIFI_UUID_SERVICE)
+#define WIFI_PASS_UUID_CHAR 0xb8, 0x3a, 0x34, 0xf8, 0xaf, 0x02, 0x3d, 0xad,\
+                            0xda, 0x4c, 0xab, 0x78, 0xc3, 0x64, 0xa9, 0x35
+//35a963c3-78ab-4cda-ad3d-02aff83439b8
+#define BT_UUID_WIFI_PASS   BT_UUID_DECLARE_128(WIFI_PASS_UUID_CHAR)
 
 BT_GATT_SERVICE_DEFINE(wifi_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_ESS),
 
   /* WiFi */
-  BT_GATT_CHARACTERISTIC(BT_UUID_WIFI,
+  BT_GATT_CHARACTERISTIC(BT_UUID_WIFI_SSID,
              BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
 			       BT_GATT_PERM_WRITE,
-			       NULL, write_wifi, wifi_ssid),
+			       NULL, write_ssid, wifi_ssid),
 
-	BT_GATT_CUD("SSID Wi-Fi", BT_GATT_PERM_READ)
+	BT_GATT_CUD("SSID Wi-Fi", BT_GATT_PERM_READ),
+
+  BT_GATT_CHARACTERISTIC(BT_UUID_WIFI_PASS,
+             BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_WRITE,
+			       NULL, write_pass, wifi_pass),
+
+	BT_GATT_CUD("PASS Wi-Fi", BT_GATT_PERM_READ)
 );
 
 typedef struct {
@@ -258,7 +287,6 @@ uint8_t cts_sync_read(struct bt_conn *conn, uint8_t err,
 {
 
 	if (!data || length <= 0) {
-		//sync_cts_to_clock(&m_read_buf.datetime);
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -278,7 +306,6 @@ uint8_t cts_sync_read(struct bt_conn *conn, uint8_t err,
 
 
 
-    // rtc_set_time(rtc_dev, &hora);
     time_t epoch = timeutil_timegm(&hora);
     struct timespec tspec;
     tspec.tv_sec = epoch;
@@ -413,9 +440,10 @@ int main(void)
         tiempo = gmtime(&tspec.tv_sec);
         printk("Hora: %02d:%02d:%02d del %02d/%02d/%04d\n", tiempo->tm_hour, tiempo->tm_min, tiempo->tm_sec, tiempo->tm_mday, tiempo->tm_mon + 1, tiempo->tm_year + 1900);
         // printk("get epoch: %lld\n", tspec.tv_sec);
-        if(wifi_ssid_set){
-            if(wifi_connect(wifi_ssid, strlen(wifi_ssid), "surfboard1234", 13)){
+        if(wifi_ssid_set && wifi_pass_set){
+            if(wifi_connect(wifi_ssid, strlen(wifi_ssid), wifi_pass, strlen(wifi_pass))){
                 wifi_ssid_set = false;
+                wifi_pass_set = false;
             }
         }
 
