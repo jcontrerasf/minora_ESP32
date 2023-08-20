@@ -15,6 +15,9 @@
 #include <zephyr/kernel.h>
 
 #include <zephyr/drivers/rtc.h>
+#include <time.h>
+#include <zephyr/sys/timeutil.h>
+
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
@@ -29,6 +32,7 @@
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/net_event.h>
 
+LOG_MODULE_REGISTER(rtc_dev);
 static const struct device *rtc_dev = DEVICE_DT_GET(DT_ALIAS(rtc));
 
 
@@ -245,7 +249,7 @@ static struct {
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 static struct bt_gatt_read_params read_params;
 
-static struct rtc_time hora = { 0 };
+static struct tm hora = { 0 };
 
 uint8_t cts_sync_read(struct bt_conn *conn, uint8_t err,
 				    struct bt_gatt_read_params *params,
@@ -260,20 +264,27 @@ uint8_t cts_sync_read(struct bt_conn *conn, uint8_t err,
 
 	memcpy(&m_read_buf.datetime + m_read_buf.offset, data, length);
 	m_read_buf.offset += length;
-    printk("%d:%d:%d\n", m_read_buf.datetime.hours, m_read_buf.datetime.minutes, m_read_buf.datetime.seconds);
+    printk("%d:%d:%d %02d/%02d/%04d\n", m_read_buf.datetime.hours, m_read_buf.datetime.minutes, m_read_buf.datetime.seconds, m_read_buf.datetime.day, m_read_buf.datetime.month, m_read_buf.datetime.year);
 
     hora.tm_sec = m_read_buf.datetime.seconds;
     hora.tm_min = m_read_buf.datetime.minutes;
     hora.tm_hour = m_read_buf.datetime.hours;
     hora.tm_mday = m_read_buf.datetime.day;
-    hora.tm_mon = m_read_buf.datetime.month;
-    hora.tm_year = m_read_buf.datetime.year;
+    hora.tm_mon = m_read_buf.datetime.month - 1;
+    hora.tm_year = m_read_buf.datetime.year - 1900;
     hora.tm_wday = m_read_buf.datetime.day_of_week;
     hora.tm_yday = -1;
     hora.tm_isdst = -1;
-    hora.tm_nsec = 0;
 
-    rtc_set_time(rtc_dev, &hora);
+
+
+    // rtc_set_time(rtc_dev, &hora);
+    time_t epoch = timeutil_timegm(&hora);
+    struct timespec tspec;
+    tspec.tv_sec = epoch;
+    tspec.tv_nsec= 0;
+    printk("Epoch: %lld\n", epoch);
+    clock_settime(CLOCK_REALTIME, &tspec);
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -377,6 +388,13 @@ int main(void)
 
 	bt_conn_auth_cb_register(&auth_cb_display);
 
+    if (rtc_dev == NULL) {
+        LOG_ERR("RTC device not found\n");
+        return 0;
+    }
+    err = device_is_ready(rtc_dev);
+    LOG_INF("RTC dev: %d\n", err);
+
 	net_mgmt_init_event_callback(&wifi_cb, wifi_mgmt_event_handler,
                                  NET_EVENT_WIFI_CONNECT_RESULT | NET_EVENT_WIFI_DISCONNECT_RESULT);
 
@@ -386,18 +404,15 @@ int main(void)
     net_mgmt_add_event_callback(&ipv4_cb);
 
 
-    // wifi_connect();
-    // k_sem_take(&wifi_connected, K_FOREVER);
-    // wifi_status();
-    // k_sem_take(&ipv4_address_obtained, K_FOREVER);
-    // printk("Ready...\n\n");
 
 	while (1) {
 		k_sleep(K_SECONDS(1));
-        // printk("lalala %s\n", wifi_ssid);
-        memset(&hora, 0, sizeof(hora));
-        rtc_get_time(rtc_dev, &hora);
-        printk("Hora: %02d:%02d:%02d del %02d/%02d/%d\n", hora.tm_hour, hora.tm_min, hora.tm_sec, hora.tm_mday, hora.tm_mon, hora.tm_year);
+        struct timespec tspec;
+        clock_gettime(CLOCK_REALTIME, &tspec);
+        struct tm *tiempo;
+        tiempo = gmtime(&tspec.tv_sec);
+        printk("Hora: %02d:%02d:%02d del %02d/%02d/%04d\n", tiempo->tm_hour, tiempo->tm_min, tiempo->tm_sec, tiempo->tm_mday, tiempo->tm_mon + 1, tiempo->tm_year + 1900);
+        // printk("get epoch: %lld\n", tspec.tv_sec);
         if(wifi_ssid_set){
             if(wifi_connect(wifi_ssid, strlen(wifi_ssid), "surfboard1234", 13)){
                 wifi_ssid_set = false;
