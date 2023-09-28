@@ -5,4 +5,9 @@ set(DTC_OVERLAY_FILE "esp32.overlay")
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(hello_world)
 
+target_include_directories(app PRIVATE EPD)
+
 target_sources(app PRIVATE src/main.c)
+
+target_sources(app PRIVATE
+    EPD/EPAPER.c)

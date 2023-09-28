@@ -1,3 +1,41 @@
 &wifi {
 	status = "okay";
 };
+
+&spi2 {
+    status = "okay";
+    pinctrl-0 = <&spim2_default>; // zephyr\boards\xtensa\esp32\esp32-pinctrl.dtsi
+};
+
+/ {
+    aliases {
+        respin = "/epd_out/res";
+        cspin = "/epd_out/cs";
+        dcpin = "/epd_out/dc";
+        busypin = "/epd_in/busy";
+    };
+    epd_out {
+        compatible = "gpio-leds"; 
+        res {
+            gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+            label = "EDP_RES";
+        };
+        cs {
+            gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+            label = "EDP_CS";
+        };
+        dc {
+            gpios = <&gpio1 32 GPIO_ACTIVE_HIGH>;
+            label = "EDP_DC";
+        };
+    };
+
+    epd_in {
+        compatible = "gpio-keys";
+        busy {
+            gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+            label = "EDP_BUSY";
+        };
+    };
+
+};
