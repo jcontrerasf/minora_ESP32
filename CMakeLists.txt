@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 cmake_minimum_required(VERSION 3.20.0)
+set(BOARD "esp32")
 set(DTC_OVERLAY_FILE "esp32.overlay")
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(hello_world)
+project(Minora)
 
 target_include_directories(app PRIVATE EPD)
 
