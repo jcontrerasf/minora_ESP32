@@ -32,7 +32,9 @@
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/net_event.h>
 
-#include "../EPD/EPAPER.h"
+// #include "../EPD/EPAPER.h"
+
+static const struct device *display = DEVICE_DT_GET(DT_NODELABEL(ssd1675a));
 
 const unsigned char gImage_concepto_minora[4736] = { /* 0X01,0X01,0X28,0X01,0X80,0X00, */
 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
@@ -658,31 +660,31 @@ static struct bt_conn_auth_cb auth_cb_display = {
 
 
 void gpio_init(){
-    if (!device_is_ready(edp_cs_pin.port) && !device_is_ready(edp_dc_pin.port)) {
-		printk("GPIO port initialization error\n");
-		return;
-	}
-	int ret;
-	ret = gpio_pin_configure_dt(&edp_cs_pin, GPIO_OUTPUT_ACTIVE);
-	if (ret < 0) {
-		return;
-	}
-	ret = gpio_pin_configure_dt(&edp_dc_pin, GPIO_OUTPUT_ACTIVE);
-	if (ret < 0) {
-		return;
-	}
-	ret = gpio_pin_configure_dt(&edp_res_pin, GPIO_OUTPUT_ACTIVE);
-	if (ret < 0) {
-		return;
-	}
-	ret = gpio_pin_configure_dt(&edp_busy_pin, GPIO_INPUT | GPIO_PULL_UP);
-	if (ret < 0) {
-		return;
-	}
+    // if (!device_is_ready(edp_cs_pin.port) && !device_is_ready(edp_dc_pin.port)) {
+	// 	printk("GPIO port initialization error\n");
+	// 	return;
+	// }
+	// int ret;
+	// ret = gpio_pin_configure_dt(&edp_cs_pin, GPIO_OUTPUT_ACTIVE);
+	// if (ret < 0) {
+	// 	return;
+	// }
+	// ret = gpio_pin_configure_dt(&edp_dc_pin, GPIO_OUTPUT_ACTIVE);
+	// if (ret < 0) {
+	// 	return;
+	// }
+	// ret = gpio_pin_configure_dt(&edp_res_pin, GPIO_OUTPUT_ACTIVE);
+	// if (ret < 0) {
+	// 	return;
+	// }
+	// ret = gpio_pin_configure_dt(&edp_busy_pin, GPIO_INPUT | GPIO_PULL_UP);
+	// if (ret < 0) {
+	// 	return;
+	// }
 
-	printk("GPIO pins initialized correctly\n");
-    ret = gpio_pin_set_dt(&edp_res_pin, 0);
-    printk("pin reset low: %d\n", ret);
+	// printk("GPIO pins initialized correctly\n");
+    // ret = gpio_pin_set_dt(&edp_res_pin, 0);
+    // printk("pin reset low: %d\n", ret);
 }
 
 int main(void)
@@ -693,7 +695,7 @@ int main(void)
     memset(wifi_ssid, 0, 50);
     memset(wifi_pass, 0, 50);
 
-    gpio_init();
+    // gpio_init();
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -705,10 +707,23 @@ int main(void)
 
 	bt_conn_auth_cb_register(&auth_cb_display);
 
-    EPD_HW_Init(); //Electronic paper initialization
+    // EPD_HW_Init(); //Electronic paper initialization
     // EPD_WhiteScreen_White();
-	EPD_WhiteScreen_ALL(gImage_concepto_minora); //Refresh the picture in full screen
+	// EPD_WhiteScreen_ALL(gImage_concepto_minora); //Refresh the picture in full screen
 
+    if(display == NULL){
+        printk("Error display\n");
+    }
+
+    if(!device_is_ready(display)){
+        printk("Error dev display\n");
+    }
+
+    int ret = cfb_framebuffer_init(display);
+    printk("ret framebuffer=%d\n", ret);
+
+    ret = cfb_print(display, "SALUDOS", 0, 0);
+    printk("ret print framebuffer=%d\n", ret);
 
 	net_mgmt_init_event_callback(&wifi_cb, wifi_mgmt_event_handler,
                                  NET_EVENT_WIFI_CONNECT_RESULT | NET_EVENT_WIFI_DISCONNECT_RESULT);
