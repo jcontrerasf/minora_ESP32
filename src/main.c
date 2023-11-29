@@ -725,6 +725,9 @@ int main(void)
     ret = cfb_print(display, "SALUDOS", 0, 0);
     printk("ret print framebuffer=%d\n", ret);
 
+    ret = cfb_framebuffer_finalize(display);
+    printk("ret print finalize=%d\n", ret);
+
 	net_mgmt_init_event_callback(&wifi_cb, wifi_mgmt_event_handler,
                                  NET_EVENT_WIFI_CONNECT_RESULT | NET_EVENT_WIFI_DISCONNECT_RESULT);
 
