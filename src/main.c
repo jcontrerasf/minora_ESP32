@@ -34,7 +34,7 @@
 
 // #include "../EPD/EPAPER.h"
 
-static const struct device *display = DEVICE_DT_GET(DT_NODELABEL(ssd1675a));
+// static const struct device *display = DEVICE_DT_GET(DT_NODELABEL(ssd1675a));
 
 const unsigned char gImage_concepto_minora[4736] = { /* 0X01,0X01,0X28,0X01,0X80,0X00, */
 0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,0XFF,
@@ -691,6 +691,9 @@ int main(void)
 {
 	int err;
 
+    const struct device *display;
+	display = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+
 	printk("Iniciando app\n");
     memset(wifi_ssid, 0, 50);
     memset(wifi_pass, 0, 50);
@@ -719,14 +722,21 @@ int main(void)
         printk("Error dev display\n");
     }
 
+    display_set_pixel_format(display, PIXEL_FORMAT_MONO10);
+
     int ret = cfb_framebuffer_init(display);
     printk("ret framebuffer=%d\n", ret);
 
-    ret = cfb_print(display, "SALUDOS", 0, 0);
+    cfb_framebuffer_clear(display, true);
+
+	display_blanking_off(display);
+
+    ret = cfb_print(display, "SALUDOS :D", 5, 5);
     printk("ret print framebuffer=%d\n", ret);
 
     ret = cfb_framebuffer_finalize(display);
     printk("ret print finalize=%d\n", ret);
+
 
 	net_mgmt_init_event_callback(&wifi_cb, wifi_mgmt_event_handler,
                                  NET_EVENT_WIFI_CONNECT_RESULT | NET_EVENT_WIFI_DISCONNECT_RESULT);
