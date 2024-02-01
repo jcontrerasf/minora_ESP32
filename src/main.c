@@ -415,9 +415,6 @@ int main(void)
 
 	bt_conn_auth_cb_register(&auth_cb_display);
 
-    // EPD_HW_Init(); //Electronic paper initialization
-    // EPD_WhiteScreen_White();
-	// EPD_WhiteScreen_ALL(gImage_concepto_minora); //Refresh the picture in full screen
 
     if(display == NULL){
         printk("Error display\n");
@@ -427,12 +424,18 @@ int main(void)
         printk("Error dev display\n");
     }
 
+    // display_set_orientation(display, DISPLAY_ORIENTATION_NORMAL);
+    lv_disp_t *lv_disp;
+    lv_disp = lv_disp_get_default();
+    lv_disp_set_rotation(lv_disp, LV_DISP_ROT_NONE);
+    display_blanking_on(display);
+
     hello_world_label = lv_label_create(lv_scr_act());
     lv_label_set_text(hello_world_label, "Saludos desde LVGL");
 	lv_obj_align(hello_world_label, LV_ALIGN_CENTER, 0, 0);
 
 
-    display_set_pixel_format(display, PIXEL_FORMAT_MONO01);
+    // display_set_pixel_format(display, PIXEL_FORMAT_MONO01);
 
     // int ret = cfb_framebuffer_init(display);
     // printk("ret framebuffer=%d\n", ret);
