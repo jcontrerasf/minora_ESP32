@@ -428,10 +428,10 @@ int main(void)
     lv_disp_t *lv_disp;
     lv_disp = lv_disp_get_default();
     lv_disp_set_rotation(lv_disp, LV_DISP_ROT_NONE);
-    display_blanking_on(display);
+    // display_blanking_on(display);
 
     hello_world_label = lv_label_create(lv_scr_act());
-    lv_label_set_text(hello_world_label, "Saludos desde LVGL");
+    lv_label_set_text(hello_world_label, "Hola desde LVGL");
 	lv_obj_align(hello_world_label, LV_ALIGN_CENTER, 0, 0);
 
 
@@ -443,7 +443,7 @@ int main(void)
     // cfb_framebuffer_clear(display, true);
 
     lv_task_handler();
-	display_blanking_off(display);
+	// display_blanking_off(display);
 
     // ret = cfb_print(display, "SALUDOS :D", 5, 5);
     // printk("ret print framebuffer=%d\n", ret);
