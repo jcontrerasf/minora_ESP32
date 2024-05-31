@@ -37,6 +37,22 @@
 
 // static const struct device *display = DEVICE_DT_GET(DT_NODELABEL(ssd1675a));
 
+const uint8_t gImage_up_L[64] = { /* 0X01,0X01,0X10,0X00,0X20,0X00, */
+0xFC,0x1F,0xFF,0xFF,0xF8,0x3F,0xFF,0xFF,0xF0,0x7F,0xFF,0xFF,0xE0,0xFF,0xFF,0xFF,
+0xC1,0xFF,0xFF,0xFF,0x83,0xFF,0xFF,0xFF,0x00,0x00,0x00,0x3F,0x00,0x00,0x00,0x3F,
+0x00,0x00,0x00,0x3F,0x00,0x00,0x00,0x3F,0x83,0xFF,0xFF,0xFF,0xC1,0xFF,0xFF,0xFF,
+0xE0,0xFF,0xFF,0xFF,0xF0,0x7F,0xFF,0xFF,0xF8,0x3F,0xFF,0xFF,0xFC,0x1F,0xFF,0xFF,
+};
+
+// static lv_image_dsc_t my_img_dsc = {
+//     .header.always_zero = 0,
+//     .header.w = 16,
+//     .header.h = 32,
+//     .data_size = 16 * 32 * LV_COLOR_DEPTH / 8,
+//     .header.cf = LV_COLOR_FORMAT_NATIVE,          /*Set the color format*/
+//     .data = gImage_up_L,
+// };
+
 
 
 static struct net_mgmt_event_callback wifi_cb;
@@ -433,6 +449,22 @@ int main(void)
     hello_world_label = lv_label_create(lv_scr_act());
     lv_label_set_text(hello_world_label, "Hola desde LVGL");
 	lv_obj_align(hello_world_label, LV_ALIGN_CENTER, 0, 0);
+
+    lv_obj_t * label;
+
+    lv_obj_t * btn1 = lv_btn_create(lv_scr_act());
+    lv_obj_align(btn1, LV_ALIGN_CENTER, 0, -40);
+
+    label = lv_label_create(btn1);
+    lv_label_set_text(label, "Boton");
+
+    static lv_style_t style_btn;
+    lv_style_init(&style_btn);
+    lv_style_set_border_width(&style_btn, 2);
+    lv_style_set_border_color(&style_btn, lv_color_black());
+
+    // lv_obj_remove_style_all(btn1);                          /*Remove the style coming from the theme*/
+    lv_obj_add_style(btn1, &style_btn, 0);
 
 
     // display_set_pixel_format(display, PIXEL_FORMAT_MONO01);
