@@ -9,5 +9,6 @@ project(Minora)
 target_include_directories(app PRIVATE EPD)
 
 target_sources(app PRIVATE src/main.c)
+target_sources(app PRIVATE icons/cloudy.c)
 
 #target_sources(app PRIVATE EPD/EPAPER.c)

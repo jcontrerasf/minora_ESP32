@@ -466,6 +466,11 @@ int main(void)
     // lv_obj_remove_style_all(btn1);                          /*Remove the style coming from the theme*/
     lv_obj_add_style(btn1, &style_btn, 0);
 
+    LV_IMG_DECLARE(cloudy);
+    lv_obj_t * img1 = lv_img_create(lv_scr_act());
+    lv_img_set_src(img1, &cloudy);
+    lv_obj_align(img1, LV_ALIGN_CENTER, -100, -30);
+
 
     // display_set_pixel_format(display, PIXEL_FORMAT_MONO01);
 
