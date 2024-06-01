@@ -471,6 +471,10 @@ int main(void)
     lv_img_set_src(img1, &cloudy);
     lv_obj_align(img1, LV_ALIGN_CENTER, -100, -30);
 
+    lv_obj_t * bt_icon = lv_label_create(lv_scr_act());
+    lv_label_set_text(bt_icon, "test BT");
+    lv_obj_align(bt_icon, LV_ALIGN_CENTER, -100, 30);
+    // lv_obj_set_style_text_font(bt_icon, &lv_font_montserrat_20, 0); //no funciona
 
     // display_set_pixel_format(display, PIXEL_FORMAT_MONO01);
 

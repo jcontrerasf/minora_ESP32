@@ -1,16 +1,22 @@
 {
+    "env": {
+        "myZephyrSourcePath": "/home/julio/zephyrproject/zephyr",
+        "myZephyrSDKPath": "/home/julio/zephyr-sdk-0.16.3/"
+    },
     "configurations": [
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${myZephyrSourcePath}/include/",
+                "${myZephyrSourcePath}/../modules/**",
+                "${myZephyrSourcePath}/lib/libc/minimal/include/",
+                "${myZephyrSourcePath}/arch/arm/include/",
+                "${workspaceFolder}/build/zephyr/include/generated/"
             ],
-            "defines": [],
-            "compilerPath": "/usr/bin/gcc",
-            "cStandard": "c17",
-            "cppStandard": "gnu++17",
-            "intelliSenseMode": "linux-gcc-x64",
-            "configurationProvider": "ms-vscode.cmake-tools"
+            "compilerPath": "${myZephyrSDKPath}/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x64"
         }
     ],
     "version": 4
