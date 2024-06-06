@@ -53,145 +53,147 @@ const uint8_t gImage_up_L[64] = { /* 0X01,0X01,0X10,0X00,0X20,0X00, */
 //     .data = gImage_up_L,
 // };
 
+// LV_FONT_DECLARE(kode_mono_18);
+LV_FONT_DECLARE(kode_mono_bold_20);
 
 
-static struct net_mgmt_event_callback wifi_cb;
-static struct net_mgmt_event_callback ipv4_cb;
+// static struct net_mgmt_event_callback wifi_cb;
+// static struct net_mgmt_event_callback ipv4_cb;
 
-static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
-{
-    const struct wifi_status *status = (const struct wifi_status *)cb->info;
+// static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
+// {
+//     const struct wifi_status *status = (const struct wifi_status *)cb->info;
 
-    if (status->status)
-    {
-        printk("Connection request failed (%d)\n", status->status);
-    }
-    else
-    {
-        printk("Connected\n");
-    }
-}
+//     if (status->status)
+//     {
+//         printk("Connection request failed (%d)\n", status->status);
+//     }
+//     else
+//     {
+//         printk("Connected\n");
+//     }
+// }
 
-static void handle_wifi_disconnect_result(struct net_mgmt_event_callback *cb)
-{
-    const struct wifi_status *status = (const struct wifi_status *)cb->info;
+// static void handle_wifi_disconnect_result(struct net_mgmt_event_callback *cb)
+// {
+//     const struct wifi_status *status = (const struct wifi_status *)cb->info;
 
-    if (status->status)
-    {
-        printk("Disconnection request (%d)\n", status->status);
-    }
-    else
-    {
-        printk("Disconnected\n");
-    }
-}
+//     if (status->status)
+//     {
+//         printk("Disconnection request (%d)\n", status->status);
+//     }
+//     else
+//     {
+//         printk("Disconnected\n");
+//     }
+// }
 
-static void handle_ipv4_result(struct net_if *iface)
-{
-    int i = 0;
+// static void handle_ipv4_result(struct net_if *iface)
+// {
+//     int i = 0;
 
-    for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+//     for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
 
-        char buf[NET_IPV4_ADDR_LEN];
+//         char buf[NET_IPV4_ADDR_LEN];
 
-        if (iface->config.ip.ipv4->unicast[i].addr_type != NET_ADDR_DHCP) {
-            continue;
-        }
+//         if (iface->config.ip.ipv4->unicast[i].addr_type != NET_ADDR_DHCP) {
+//             continue;
+//         }
 
-        printk("IPv4 address: %s\n",
-                net_addr_ntop(AF_INET,
-                                &iface->config.ip.ipv4->unicast[i].address.in_addr,
-                                buf, sizeof(buf)));
-        printk("Subnet: %s\n",
-                net_addr_ntop(AF_INET,
-                                &iface->config.ip.ipv4->netmask,
-                                buf, sizeof(buf)));
-        printk("Router: %s\n",
-                net_addr_ntop(AF_INET,
-                                &iface->config.ip.ipv4->gw,
-                                buf, sizeof(buf)));
-        }
+//         printk("IPv4 address: %s\n",
+//                 net_addr_ntop(AF_INET,
+//                                 &iface->config.ip.ipv4->unicast[i].address.in_addr,
+//                                 buf, sizeof(buf)));
+//         printk("Subnet: %s\n",
+//                 net_addr_ntop(AF_INET,
+//                                 &iface->config.ip.ipv4->netmask,
+//                                 buf, sizeof(buf)));
+//         printk("Router: %s\n",
+//                 net_addr_ntop(AF_INET,
+//                                 &iface->config.ip.ipv4->gw,
+//                                 buf, sizeof(buf)));
+//         }
 
-}
+// }
 
-static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event, struct net_if *iface)
-{
-    switch (mgmt_event)
-    {
+// static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event, struct net_if *iface)
+// {
+//     switch (mgmt_event)
+//     {
 
-        case NET_EVENT_WIFI_CONNECT_RESULT:
-            handle_wifi_connect_result(cb);
-            break;
+//         case NET_EVENT_WIFI_CONNECT_RESULT:
+//             handle_wifi_connect_result(cb);
+//             break;
 
-        case NET_EVENT_WIFI_DISCONNECT_RESULT:
-            handle_wifi_disconnect_result(cb);
-            break;
+//         case NET_EVENT_WIFI_DISCONNECT_RESULT:
+//             handle_wifi_disconnect_result(cb);
+//             break;
 
-        case NET_EVENT_IPV4_ADDR_ADD:
-            handle_ipv4_result(iface);
-            break;
+//         case NET_EVENT_IPV4_ADDR_ADD:
+//             handle_ipv4_result(iface);
+//             break;
 
-        default:
-            break;
-    }
-}
+//         default:
+//             break;
+//     }
+// }
 
-bool wifi_connect(uint8_t* ssid, ssize_t len_ssid, uint8_t* pass, ssize_t len_pass)
-{
-    struct net_if *iface = net_if_get_default();
+// bool wifi_connect(uint8_t* ssid, ssize_t len_ssid, uint8_t* pass, ssize_t len_pass)
+// {
+//     struct net_if *iface = net_if_get_default();
 
-    struct wifi_connect_req_params wifi_params = {0};
+//     struct wifi_connect_req_params wifi_params = {0};
 
-    wifi_params.ssid = ssid;
-    wifi_params.psk = pass;
-    wifi_params.ssid_length = len_ssid;
-    wifi_params.psk_length = len_pass;
-    wifi_params.channel = WIFI_CHANNEL_ANY;
-    wifi_params.security = WIFI_SECURITY_TYPE_PSK;
-    wifi_params.band = WIFI_FREQ_BAND_2_4_GHZ; 
-    wifi_params.mfp = WIFI_MFP_OPTIONAL;
+//     wifi_params.ssid = ssid;
+//     wifi_params.psk = pass;
+//     wifi_params.ssid_length = len_ssid;
+//     wifi_params.psk_length = len_pass;
+//     wifi_params.channel = WIFI_CHANNEL_ANY;
+//     wifi_params.security = WIFI_SECURITY_TYPE_PSK;
+//     wifi_params.band = WIFI_FREQ_BAND_2_4_GHZ; 
+//     wifi_params.mfp = WIFI_MFP_OPTIONAL;
 
-    printk("Connecting to SSID: %s\n", wifi_params.ssid);
+//     printk("Connecting to SSID: %s\n", wifi_params.ssid);
 
-    if (net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &wifi_params, sizeof(struct wifi_connect_req_params)))
-    {
-        printk("WiFi Connection Request Failed\n");
-        return false;
-    }
-    return true;
-}
+//     if (net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &wifi_params, sizeof(struct wifi_connect_req_params)))
+//     {
+//         printk("WiFi Connection Request Failed\n");
+//         return false;
+//     }
+//     return true;
+// }
 
-void wifi_status(void)
-{
-    struct net_if *iface = net_if_get_default();
+// void wifi_status(void)
+// {
+//     struct net_if *iface = net_if_get_default();
     
-    struct wifi_iface_status status = {0};
+//     struct wifi_iface_status status = {0};
 
-    if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &status,	sizeof(struct wifi_iface_status)))
-    {
-        printk("WiFi Status Request Failed\n");
-    }
+//     if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &status,	sizeof(struct wifi_iface_status)))
+//     {
+//         printk("WiFi Status Request Failed\n");
+//     }
 
-    printk("\n");
+//     printk("\n");
 
-    if (status.state >= WIFI_STATE_ASSOCIATED) {
-        printk("SSID: %-32s\n", status.ssid);
-        printk("Band: %s\n", wifi_band_txt(status.band));
-        printk("Channel: %d\n", status.channel);
-        printk("Security: %s\n", wifi_security_txt(status.security));
-        printk("RSSI: %d\n", status.rssi);
-    }
-}
+//     if (status.state >= WIFI_STATE_ASSOCIATED) {
+//         printk("SSID: %-32s\n", status.ssid);
+//         printk("Band: %s\n", wifi_band_txt(status.band));
+//         printk("Channel: %d\n", status.channel);
+//         printk("Security: %s\n", wifi_security_txt(status.security));
+//         printk("RSSI: %d\n", status.rssi);
+//     }
+// }
 
-void wifi_disconnect(void)
-{
-    struct net_if *iface = net_if_get_default();
+// void wifi_disconnect(void)
+// {
+//     struct net_if *iface = net_if_get_default();
 
-    if (net_mgmt(NET_REQUEST_WIFI_DISCONNECT, iface, NULL, 0))
-    {
-        printk("WiFi Disconnection Request Failed\n");
-    }
-}
+//     if (net_mgmt(NET_REQUEST_WIFI_DISCONNECT, iface, NULL, 0))
+//     {
+//         printk("WiFi Disconnection Request Failed\n");
+//     }
+// }
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -471,10 +473,15 @@ int main(void)
     lv_img_set_src(img1, &cloudy);
     lv_obj_align(img1, LV_ALIGN_CENTER, -100, -30);
 
+
+    static lv_style_t my_style;
+    lv_style_init(&my_style);
+    lv_style_set_text_font(&my_style, &kode_mono_bold_20);
+
     lv_obj_t * bt_icon = lv_label_create(lv_scr_act());
-    lv_label_set_text(bt_icon, "test BT");
-    lv_obj_align(bt_icon, LV_ALIGN_CENTER, -100, 30);
-    // lv_obj_set_style_text_font(bt_icon, &lv_font_montserrat_20, 0); //no funciona
+    lv_label_set_text(bt_icon, "dom 02 jun 2024"); //LV_SYMBOL_BLUETOOTH
+    lv_obj_add_style(bt_icon, &my_style, LV_PART_MAIN);
+    lv_obj_align(bt_icon, LV_ALIGN_CENTER, 0, 30);
 
     // display_set_pixel_format(display, PIXEL_FORMAT_MONO01);
 
@@ -484,7 +491,7 @@ int main(void)
     // cfb_framebuffer_clear(display, true);
 
     lv_task_handler();
-	// display_blanking_off(display);
+	display_blanking_off(display);
 
     // ret = cfb_print(display, "SALUDOS :D", 5, 5);
     // printk("ret print framebuffer=%d\n", ret);
@@ -493,13 +500,13 @@ int main(void)
     // printk("ret print finalize=%d\n", ret);
 
 
-	net_mgmt_init_event_callback(&wifi_cb, wifi_mgmt_event_handler,
-                                 NET_EVENT_WIFI_CONNECT_RESULT | NET_EVENT_WIFI_DISCONNECT_RESULT);
+	// net_mgmt_init_event_callback(&wifi_cb, wifi_mgmt_event_handler,
+    //                              NET_EVENT_WIFI_CONNECT_RESULT | NET_EVENT_WIFI_DISCONNECT_RESULT);
 
-    net_mgmt_init_event_callback(&ipv4_cb, wifi_mgmt_event_handler, NET_EVENT_IPV4_ADDR_ADD);
+    // net_mgmt_init_event_callback(&ipv4_cb, wifi_mgmt_event_handler, NET_EVENT_IPV4_ADDR_ADD);
 
-    net_mgmt_add_event_callback(&wifi_cb);
-    net_mgmt_add_event_callback(&ipv4_cb);
+    // net_mgmt_add_event_callback(&wifi_cb);
+    // net_mgmt_add_event_callback(&ipv4_cb);
 
 
 
@@ -511,12 +518,12 @@ int main(void)
         tiempo = gmtime(&tspec.tv_sec);
         printk("Hora: %02d:%02d:%02d del %02d/%02d/%04d\n", tiempo->tm_hour, tiempo->tm_min, tiempo->tm_sec, tiempo->tm_mday, tiempo->tm_mon + 1, tiempo->tm_year + 1900);
         // printk("get epoch: %lld\n", tspec.tv_sec);
-        if(wifi_ssid_set && wifi_pass_set){
-            if(wifi_connect(wifi_ssid, strlen(wifi_ssid), wifi_pass, strlen(wifi_pass))){
-                wifi_ssid_set = false;
-                wifi_pass_set = false;
-            }
-        }
+        // if(wifi_ssid_set && wifi_pass_set){
+        //     if(wifi_connect(wifi_ssid, strlen(wifi_ssid), wifi_pass, strlen(wifi_pass))){
+        //         wifi_ssid_set = false;
+        //         wifi_pass_set = false;
+        //     }
+        // }
 
 	}
 	return 0;

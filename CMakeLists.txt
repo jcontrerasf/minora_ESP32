@@ -10,5 +10,7 @@ target_include_directories(app PRIVATE EPD)
 
 target_sources(app PRIVATE src/main.c)
 target_sources(app PRIVATE icons/cloudy.c)
+target_sources(app PRIVATE icons/kode_mono_18.c)
+target_sources(app PRIVATE icons/kode_mono_bold_20.c)
 
 #target_sources(app PRIVATE EPD/EPAPER.c)
