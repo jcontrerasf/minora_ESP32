@@ -53,8 +53,10 @@ const uint8_t gImage_up_L[64] = { /* 0X01,0X01,0X10,0X00,0X20,0X00, */
 //     .data = gImage_up_L,
 // };
 
-// LV_FONT_DECLARE(kode_mono_18);
 LV_FONT_DECLARE(kode_mono_bold_20);
+LV_FONT_DECLARE(kode_mono_bold_18);
+LV_FONT_DECLARE(kode_mono_bold_24);
+LV_FONT_DECLARE(kode_mono_bold_26);
 
 
 // static struct net_mgmt_event_callback wifi_cb;
@@ -408,6 +410,11 @@ void gpio_init(){
     // printk("pin reset low: %d\n", ret);
 }
 
+
+char* dias[7]   = {"dom", "lun", "mar", "mie", "jue", "vie", "sab"};
+char* meses[12] = {"ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"};
+
+
 int main(void)
 {
 	int err;
@@ -445,7 +452,7 @@ int main(void)
     // display_set_orientation(display, DISPLAY_ORIENTATION_NORMAL);
     lv_disp_t *lv_disp;
     lv_disp = lv_disp_get_default();
-    lv_disp_set_rotation(lv_disp, LV_DISP_ROT_NONE);
+    lv_disp_set_rotation(NULL, LV_DISP_ROT_NONE);
     // display_blanking_on(display);
 
     hello_world_label = lv_label_create(lv_scr_act());
@@ -476,10 +483,10 @@ int main(void)
 
     static lv_style_t my_style;
     lv_style_init(&my_style);
-    lv_style_set_text_font(&my_style, &kode_mono_bold_20);
+    lv_style_set_text_font(&my_style, &kode_mono_bold_26);
 
     lv_obj_t * bt_icon = lv_label_create(lv_scr_act());
-    lv_label_set_text(bt_icon, "dom 02 jun 2024"); //LV_SYMBOL_BLUETOOTH
+    lv_label_set_text(bt_icon, "dom 09 jun 2024"); //LV_SYMBOL_BLUETOOTH
     lv_obj_add_style(bt_icon, &my_style, LV_PART_MAIN);
     lv_obj_align(bt_icon, LV_ALIGN_CENTER, 0, 30);
 
@@ -490,8 +497,8 @@ int main(void)
 
     // cfb_framebuffer_clear(display, true);
 
-    lv_task_handler();
-	display_blanking_off(display);
+    // lv_task_handler();
+	// display_blanking_off(display);
 
     // ret = cfb_print(display, "SALUDOS :D", 5, 5);
     // printk("ret print framebuffer=%d\n", ret);
@@ -507,6 +514,9 @@ int main(void)
 
     // net_mgmt_add_event_callback(&wifi_cb);
     // net_mgmt_add_event_callback(&ipv4_cb);
+
+    char fecha[30];
+    uint8_t last_day = 0;
 
 
 
@@ -524,6 +534,17 @@ int main(void)
         //         wifi_pass_set = false;
         //     }
         // }
+
+        if(last_day != tiempo->tm_mday){
+            display_blanking_on(display);
+            last_day = tiempo->tm_mday;
+            sprintf(fecha, "%s %02d %s %04d", dias[tiempo->tm_wday], tiempo->tm_mday, meses[tiempo->tm_mon], tiempo->tm_year + 1900);
+            lv_label_set_text(bt_icon, fecha);
+            display_blanking_off(display);
+            // lv_task_handler();
+        }
+        lv_task_handler();
+        
 
 	}
 	return 0;
