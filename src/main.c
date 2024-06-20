@@ -536,7 +536,7 @@ int main(void)
         // }
 
         if(last_day != tiempo->tm_mday){
-            display_blanking_on(display);
+            // display_blanking_on(display);
             last_day = tiempo->tm_mday;
             sprintf(fecha, "%s %02d %s %04d", dias[tiempo->tm_wday], tiempo->tm_mday, meses[tiempo->tm_mon], tiempo->tm_year + 1900);
             lv_label_set_text(bt_icon, fecha);
@@ -544,6 +544,14 @@ int main(void)
             // lv_task_handler();
         }
         lv_task_handler();
+        
+        //Esto sí funciona para forzar una actualización completa
+        // if(tiempo->tm_sec%10 == 0){
+        //     display_blanking_on(display);
+        //     lv_label_set_text(bt_icon, fecha);
+        //     display_blanking_off(display);
+        //     lv_task_handler();
+        // }
         
 
 	}
