@@ -4,6 +4,15 @@
 #include <zephyr/net/net_event.h>
 
 
+// Definir una variable global para almacenar el valor de la característica
+char wifi_ssid[50];
+bool wifi_ssid_set = false;
+
+char wifi_pass[50];
+bool wifi_pass_set = false;
+
+
+
 
 static struct net_mgmt_event_callback wifi_cb;
 static struct net_mgmt_event_callback ipv4_cb;
