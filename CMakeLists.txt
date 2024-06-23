@@ -15,6 +15,7 @@ target_sources(app PRIVATE ${ICON_SOURCES})
 
 target_sources(app PRIVATE src/wifi.c)
 target_sources(app PRIVATE src/ble.c)
+target_sources(app PRIVATE src/screen.c)
 
 # target_sources(app PRIVATE icons/bluetooth.c)
 # target_sources(app PRIVATE icons/kode_mono_bold_24.c)

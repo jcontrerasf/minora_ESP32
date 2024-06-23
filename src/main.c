@@ -16,17 +16,13 @@
 
 #include <time.h>
 #include <zephyr/sys/timeutil.h>
-#include <zephyr/display/cfb.h>
-#include <zephyr/drivers/display.h>
-#include <zephyr/display/ssd16xx.h>
 #include <zephyr/logging/log.h>
-#include <lvgl.h>
 
 
+#include "screen.h"
 #include "wifi.h"
 #include "ble.h"
 
-// #include "../EPD/EPAPER.h"
 
 // static const struct device *display = DEVICE_DT_GET(DT_NODELABEL(ssd1675a));
 
@@ -46,24 +42,11 @@ const uint8_t gImage_up_L[64] = { /* 0X01,0X01,0X10,0X00,0X20,0X00, */
 //     .data = gImage_up_L,
 // };
 
-LV_FONT_DECLARE(kode_mono_bold_20);
-LV_FONT_DECLARE(kode_mono_bold_18);
-LV_FONT_DECLARE(kode_mono_bold_24);
-LV_FONT_DECLARE(kode_mono_bold_26);
-
-
-
-char* dias[7]   = {"dom", "lun", "mar", "mie", "jue", "vie", "sab"};
-char* meses[12] = {"ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"};
 
 
 int main(void){
   int err;
 
-  const struct device *display;
-  lv_obj_t *hello_world_label;
-
-  display = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 
   printk("Iniciando app\n");
   memset(wifi_ssid, 0, 50);
@@ -73,60 +56,7 @@ int main(void){
 
   ble_init();
 
-
-  if(display == NULL){
-      printk("Error display\n");
-  }
-
-  if(!device_is_ready(display)){
-      printk("Error dev display\n");
-  }
-
-  // display_set_orientation(display, DISPLAY_ORIENTATION_NORMAL);
-  lv_disp_t *lv_disp;
-  lv_disp = lv_disp_get_default();
-  lv_disp_set_rotation(NULL, LV_DISP_ROT_NONE);
-  // display_blanking_on(display);
-
-  hello_world_label = lv_label_create(lv_scr_act());
-  lv_label_set_text(hello_world_label, LV_SYMBOL_BLUETOOTH);
-  lv_obj_align(hello_world_label, LV_ALIGN_CENTER, 0, 0);
-
-  lv_obj_t * label;
-
-  lv_obj_t * btn1 = lv_btn_create(lv_scr_act());
-  lv_obj_align(btn1, LV_ALIGN_CENTER, 0, -40);
-
-  label = lv_label_create(btn1);
-  lv_label_set_text(label, "Boton");
-
-  static lv_style_t style_btn;
-  lv_style_init(&style_btn);
-  lv_style_set_border_width(&style_btn, 2);
-  lv_style_set_border_color(&style_btn, lv_color_black());
-
-  // lv_obj_remove_style_all(btn1);                          /*Remove the style coming from the theme*/
-  lv_obj_add_style(btn1, &style_btn, 0);
-
-  LV_IMG_DECLARE(cloudy);
-  lv_obj_t * img1 = lv_img_create(lv_scr_act());
-  lv_img_set_src(img1, &cloudy);
-  lv_obj_align(img1, LV_ALIGN_CENTER, -100, -30);
-
-  LV_IMG_DECLARE(bluetooth_24dp);
-  lv_obj_t * ble_img = lv_img_create(lv_scr_act());
-  lv_img_set_src(ble_img, &bluetooth_24dp);
-  lv_obj_align(ble_img, LV_ALIGN_TOP_RIGHT, 0, 0);
-
-
-  static lv_style_t my_style;
-  lv_style_init(&my_style);
-  lv_style_set_text_font(&my_style, &kode_mono_bold_26);
-
-  lv_obj_t * bt_icon = lv_label_create(lv_scr_act());
-  lv_label_set_text(bt_icon, "dom 09 jun 2024"); //LV_SYMBOL_BLUETOOTH
-  lv_obj_add_style(bt_icon, &my_style, LV_PART_MAIN);
-  lv_obj_align(bt_icon, LV_ALIGN_CENTER, 0, 30);
+  screen_init();
 
   // display_set_pixel_format(display, PIXEL_FORMAT_MONO01);
 
@@ -146,7 +76,6 @@ int main(void){
 
   wifi_set_callbacks();
 
-  char fecha[30];
   uint8_t last_day = 0;
 
 
@@ -167,23 +96,10 @@ int main(void){
     }
 
     if(last_day != tiempo->tm_mday){
-      // display_blanking_on(display);
       last_day = tiempo->tm_mday;
-      sprintf(fecha, "%s %02d %s %04d", dias[tiempo->tm_wday], tiempo->tm_mday, meses[tiempo->tm_mon], tiempo->tm_year + 1900);
-      lv_label_set_text(bt_icon, fecha);
-      display_blanking_off(display);
-      // lv_task_handler();
-    }
-    lv_task_handler();
+      screen_set_date(tiempo->tm_wday, tiempo->tm_mday, tiempo->tm_mon, tiempo->tm_year + 1900);
+    }   
     
-    //Esto sí funciona para forzar una actualización completa
-    // if(tiempo->tm_sec%10 == 0){
-    //     display_blanking_on(display);
-    //     lv_label_set_text(bt_icon, fecha);
-    //     display_blanking_off(display);
-    //     lv_task_handler();
-    // }
-        
 
   }
   return 0;
