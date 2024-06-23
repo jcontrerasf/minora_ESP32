@@ -6,14 +6,19 @@ set(DTC_OVERLAY_FILE "esp32.overlay")
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(Minora)
 
-target_include_directories(app PRIVATE EPD)
+# target_include_directories(app PRIVATE EPD)
 
 target_sources(app PRIVATE src/main.c)
-target_sources(app PRIVATE icons/cloudy.c)
-target_sources(app PRIVATE icons/kode_mono_bold_24.c)
-target_sources(app PRIVATE icons/kode_bold_24.c)
-target_sources(app PRIVATE icons/kode_mono_bold_18.c)
-target_sources(app PRIVATE icons/kode_mono_bold_20.c)
-target_sources(app PRIVATE icons/kode_mono_bold_26.c)
 
-#target_sources(app PRIVATE EPD/EPAPER.c)
+file(GLOB ICON_SOURCES "icons/*.c")
+target_sources(app PRIVATE ${ICON_SOURCES})
+
+target_sources(app PRIVATE src/wifi.c)
+
+# target_sources(app PRIVATE icons/bluetooth.c)
+# target_sources(app PRIVATE icons/kode_mono_bold_24.c)
+# target_sources(app PRIVATE icons/kode_bold_24.c)
+# target_sources(app PRIVATE icons/kode_mono_bold_18.c)
+# target_sources(app PRIVATE icons/kode_mono_bold_20.c)
+# target_sources(app PRIVATE icons/kode_mono_bold_26.c)
+
