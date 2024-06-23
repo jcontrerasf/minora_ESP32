@@ -9,6 +9,7 @@
 #include <zephyr/sys/timeutil.h>
 
 #include "wifi.h"
+#include "screen.h"
 
 static ssize_t write_ssid(struct bt_conn *conn, const struct bt_gatt_attr *attr,
                           const void *buf, uint16_t len, uint16_t offset,
@@ -145,22 +146,27 @@ static void connected(struct bt_conn *conn, uint8_t err)
 {
   if (err) {
     printk("Connection failed (err 0x%02x)\n", err);
-  } else {
-    printk("Connected\n");
-    memcpy(&uuid, BT_UUID_CTS_CURRENT_TIME, sizeof(uuid));
-    memset(&read_params, 0, sizeof(read_params));
-    read_params.func = cts_sync_read;
-    read_params.by_uuid.uuid = (struct bt_uuid *) &uuid;
-    read_params.by_uuid.start_handle = 0x0001;//attr->handle;
-    read_params.by_uuid.end_handle = 0xffff;
-    m_read_buf.offset = 0;
-    bt_gatt_read(conn, &read_params);
+    return;
   }
+
+  printk("Connected\n");
+  memcpy(&uuid, BT_UUID_CTS_CURRENT_TIME, sizeof(uuid));
+  memset(&read_params, 0, sizeof(read_params));
+  read_params.func = cts_sync_read;
+  read_params.by_uuid.uuid = (struct bt_uuid *) &uuid;
+  read_params.by_uuid.start_handle = 0x0001;//attr->handle;
+  read_params.by_uuid.end_handle = 0xffff;
+  m_read_buf.offset = 0;
+  bt_gatt_read(conn, &read_params);
+
+  screen_show_bt_icon();
+  
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
   printk("Disconnected (reason 0x%02x)\n", reason);
+  screen_hide_bt_icon();
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {

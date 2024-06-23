@@ -34,8 +34,6 @@ int main(void){
 
   uint8_t last_day = 0;
 
-
-
   while (1) {
     k_sleep(K_SECONDS(1));
     struct timespec tspec;
@@ -56,6 +54,7 @@ int main(void){
       screen_set_date(tiempo->tm_wday, tiempo->tm_mday, tiempo->tm_mon, tiempo->tm_year + 1900);
     }   
     
+    screen_update();
 
   }
   return 0;

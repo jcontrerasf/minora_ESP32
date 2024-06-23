@@ -19,6 +19,7 @@ char* str_months[12] = {"ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", 
 
 const struct device *display;
 static lv_obj_t * date_label;
+static lv_obj_t * bt_icon;
 
 void screen_init(){
   
@@ -44,9 +45,10 @@ void screen_init(){
   lv_obj_align(img1, LV_ALIGN_CENTER, -100, 30);
 
   
-  lv_obj_t * ble_img = lv_img_create(lv_scr_act());
-  lv_img_set_src(ble_img, &bluetooth_14);
-  lv_obj_align(ble_img, LV_ALIGN_TOP_RIGHT, 0, 0);
+  bt_icon = lv_img_create(lv_scr_act());
+  lv_img_set_src(bt_icon, &bluetooth_14);
+  lv_obj_align(bt_icon, LV_ALIGN_TOP_RIGHT, 0, 0);
+  screen_hide_bt_icon();
 
 
   static lv_style_t my_style;
@@ -65,7 +67,7 @@ void screen_set_date(int wday, int mday, int month, int year){
   sprintf(date, "%s %02d %s %04d", str_days[wday], mday, str_months[month], year);
   lv_label_set_text(date_label, date);
   display_blanking_off(display);
-  lv_task_handler();
+  // lv_task_handler();
 }
 
 //Esto sí funciona para forzar una actualización completa
@@ -75,4 +77,16 @@ void screen_set_date(int wday, int mday, int month, int year){
     //     display_blanking_off(display);
     //     lv_task_handler();
     // }
-        
+
+
+void screen_show_bt_icon(){
+  lv_obj_clear_flag(bt_icon, LV_OBJ_FLAG_HIDDEN);
+}
+
+void screen_hide_bt_icon(){
+  lv_obj_add_flag(bt_icon, LV_OBJ_FLAG_HIDDEN);
+}
+
+void screen_update(){
+  lv_task_handler();
+}
