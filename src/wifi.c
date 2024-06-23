@@ -12,8 +12,6 @@ char wifi_pass[50];
 bool wifi_pass_set = false;
 
 
-
-
 static struct net_mgmt_event_callback wifi_cb;
 static struct net_mgmt_event_callback ipv4_cb;
 
@@ -152,8 +150,10 @@ void wifi_disconnect(void)
   }
 }
 
+void wifi_init(){
+  memset(wifi_ssid, 0, 50);
+  memset(wifi_pass, 0, 50);
 
-void wifi_set_callbacks(){
   net_mgmt_init_event_callback(&wifi_cb, wifi_mgmt_event_handler,
                                 NET_EVENT_WIFI_CONNECT_RESULT | NET_EVENT_WIFI_DISCONNECT_RESULT);
 

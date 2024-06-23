@@ -12,4 +12,4 @@ extern bool wifi_pass_set;
 
 bool wifi_connect(uint8_t* ssid, ssize_t len_ssid, uint8_t* pass, ssize_t len_pass);
 
-void wifi_set_callbacks();
+void wifi_init();

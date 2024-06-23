@@ -10,6 +10,8 @@
         "types.h": "c",
         "stddef.h": "c",
         "string.h": "c",
-        "wifi_mgmt.h": "c"
+        "wifi_mgmt.h": "c",
+        "net_if.h": "c",
+        "wifi.h": "c"
     }
 }
