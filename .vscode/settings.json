@@ -12,6 +12,7 @@
         "string.h": "c",
         "wifi_mgmt.h": "c",
         "net_if.h": "c",
-        "wifi.h": "c"
+        "wifi.h": "c",
+        "ble.h": "c"
     }
 }

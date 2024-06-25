@@ -10,6 +10,7 @@
 
 #include "wifi.h"
 #include "screen.h"
+#include "memory.h"
 
 static ssize_t write_ssid(struct bt_conn *conn, const struct bt_gatt_attr *attr,
                           const void *buf, uint16_t len, uint16_t offset,
@@ -65,6 +66,9 @@ static ssize_t write_ssid(struct bt_conn *conn, const struct bt_gatt_attr *attr,
   memcpy(wifi_ssid + offset, buf, len);
   wifi_ssid_set = true;
 
+  memory_set_wifi_ssid(wifi_ssid, strlen(wifi_ssid));
+  printk("SSID seteado desde BT: %s\n", wifi_ssid);
+
   return len;
 }
 
@@ -79,6 +83,9 @@ static ssize_t write_pass(struct bt_conn *conn, const struct bt_gatt_attr *attr,
   memset(wifi_pass, 0, 50);
   memcpy(wifi_pass + offset, buf, len);
   wifi_pass_set = true;
+
+  memory_set_wifi_pass(wifi_pass, strlen(wifi_pass));
+  printk("PASS seteado desde BT: %s\n", wifi_pass);
 
   return len;
 }
@@ -212,4 +219,21 @@ void ble_init(){
   bt_ready();
 
   bt_conn_auth_cb_register(&auth_cb_display);
+
+  char* temp_ssid;
+  char* temp_pass;
+
+  temp_ssid = memory_check_wifi_ssid();
+  if(temp_ssid != NULL){
+    memcpy(wifi_ssid, temp_ssid, strlen(temp_ssid));
+    printk("copiando %s\n", temp_ssid);
+    wifi_ssid_set = true;
+  }
+
+  temp_pass = memory_check_wifi_pass();
+  if(temp_pass != NULL){
+    memcpy(wifi_pass, temp_pass, strlen(temp_pass));
+    printk("copiando %s\n", temp_pass);
+    wifi_pass_set = true;
+  }
 }

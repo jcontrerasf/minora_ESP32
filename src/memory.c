@@ -5,7 +5,6 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/fs/nvs.h>
-#include "wifi.h"
 
 
 static struct nvs_fs fs;
@@ -50,10 +49,10 @@ char* memory_check_wifi_ssid(){
 
   rc = nvs_read(&fs, WIFI_SSID_ID, ssid, sizeof(ssid));
   if (rc > 0) {
-    printk("Id: %d, Address: %s\n", WIFI_SSID_ID, ssid);
+    printk("Id: %d, WiFi SSID: %s\n", WIFI_SSID_ID, ssid);
     return ssid;
   } else {
-    printk("No exite wifi ssid");
+    printk("No exite wifi ssid\n");
     return NULL;
   }
 }
@@ -66,10 +65,10 @@ char* memory_check_wifi_pass(){
 
   rc = nvs_read(&fs, WIFI_PASS_ID, pass, sizeof(pass));
   if (rc > 0) {
-    printk("Id: %d, Address: %s\n", WIFI_PASS_ID, pass);
+    printk("Id: %d, WiFi PASS: %s\n", WIFI_PASS_ID, pass);
     return pass;
   } else {
-    printk("No exite wifi pass");
+    printk("No exite wifi pass\n");
     return NULL;
   }
 }

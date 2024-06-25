@@ -21,10 +21,13 @@
 #include "screen.h"
 #include "wifi.h"
 #include "ble.h"
+#include "memory.h"
 
 int main(void){
 
   printk("Iniciando app\n");
+
+  memory_init();
 
   ble_init();
 
