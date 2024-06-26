@@ -10,6 +10,7 @@
 
 #include "wifi.h"
 #include "screen.h"
+#include "memory.h"
 
 static ssize_t write_ssid(struct bt_conn *conn, const struct bt_gatt_attr *attr,
                           const void *buf, uint16_t len, uint16_t offset,
@@ -25,6 +26,12 @@ static ssize_t write_pass(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 #define BT_UUID_WIFI_PASS_CHRC   BT_UUID_DECLARE_16(0x2a02) //Peripheral Privacy Flag
 
+//Scan Response data
+// static const struct bt_data sd[] = {
+//  BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
+// };
+
+//Advertisement data
 static const struct bt_data ad[] = {
   BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
   BT_DATA_BYTES(BT_DATA_UUID16_ALL,
@@ -209,6 +216,10 @@ static struct bt_conn_auth_cb auth_cb_display = {
 };
 
 void ble_init(){
+
+  bt_addr_le_t addr = {0};
+  size_t count = 1;
+
   int err = bt_enable(NULL);
   if (err) {
     printk("Bluetooth init failed (err %d)\n", err);
@@ -218,5 +229,14 @@ void ble_init(){
   bt_ready();
 
   bt_conn_auth_cb_register(&auth_cb_display);
+  
+
+  bt_id_get(&addr, &count);
+  printk("%02x%02x\n", addr.a.val[1], addr.a.val[0]);
+  char ble_name[30];
+  sprintf(ble_name, "%s %02X%02X", CONFIG_BT_DEVICE_NAME, addr.a.val[1], addr.a.val[0]);
+
+  bt_set_name(ble_name);
+  bt_le_adv_update_data(ad, ARRAY_SIZE(ad), NULL, 0);
 
 }
