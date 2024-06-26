@@ -2,13 +2,18 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/net_event.h>
+#include <zephyr/logging/log.h>
+
+#include "memory.h"
+
+LOG_MODULE_REGISTER(wifi);
 
 
 // Definir una variable global para almacenar el valor de la característica
-char wifi_ssid[50];
+char wifi_ssid[WIFI_MAX_CHAR_CREDS];
 bool wifi_ssid_set = false;
 
-char wifi_pass[50];
+char wifi_pass[WIFI_MAX_CHAR_CREDS];
 bool wifi_pass_set = false;
 
 
@@ -151,8 +156,8 @@ void wifi_disconnect(void)
 }
 
 void wifi_init(){
-  memset(wifi_ssid, 0, 50);
-  memset(wifi_pass, 0, 50);
+  memset(wifi_ssid, 0, WIFI_MAX_CHAR_CREDS);
+  memset(wifi_pass, 0, WIFI_MAX_CHAR_CREDS);
 
   net_mgmt_init_event_callback(&wifi_cb, wifi_mgmt_event_handler,
                                 NET_EVENT_WIFI_CONNECT_RESULT | NET_EVENT_WIFI_DISCONNECT_RESULT);
@@ -161,4 +166,21 @@ void wifi_init(){
 
   net_mgmt_add_event_callback(&wifi_cb);
   net_mgmt_add_event_callback(&ipv4_cb);
+
+  char* temp_ssid;
+  char* temp_pass;
+
+  temp_ssid = memory_check_wifi_ssid();
+  if(temp_ssid != NULL){
+    memcpy(wifi_ssid, temp_ssid, strlen(temp_ssid));
+    LOG_INF("copiando %s len: %d", temp_ssid, strlen(temp_ssid));
+    wifi_ssid_set = true;
+  }
+
+  temp_pass = memory_check_wifi_pass();
+  if(temp_pass != NULL){
+    memcpy(wifi_pass, temp_pass, strlen(temp_pass));
+    LOG_INF("copiando %s len: %d", temp_pass, strlen(temp_pass));
+    wifi_pass_set = true;
+  }
 }
