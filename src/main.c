@@ -36,6 +36,8 @@ int main(void){
   wifi_init();
 
   uint8_t last_day = 0;
+  
+  bool once = false;
 
   while (1) {
     k_sleep(K_SECONDS(1));
@@ -50,6 +52,11 @@ int main(void){
         wifi_ssid_set = false;
         wifi_pass_set = false;
       }
+    }
+
+    if(!once && wifi_is_connected()){
+      wifi_get_ntp();
+      once = true;
     }
 
     if(last_day != tiempo->tm_mday){
