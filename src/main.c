@@ -23,6 +23,8 @@
 #include "ble.h"
 #include "memory.h"
 
+const int gmt_offset = -4 * MIN_PER_HOUR * SEC_PER_MIN;
+
 int main(void){
 
   printk("Iniciando app\n");
@@ -43,6 +45,7 @@ int main(void){
     k_sleep(K_SECONDS(1));
     struct timespec tspec;
     clock_gettime(CLOCK_REALTIME, &tspec);
+    tspec.tv_sec += gmt_offset;
     struct tm *tiempo;
     tiempo = gmtime(&tspec.tv_sec);
     printk("Hora: %02d:%02d:%02d del %02d/%02d/%04d\n", tiempo->tm_hour, tiempo->tm_min, tiempo->tm_sec, tiempo->tm_mday, tiempo->tm_mon + 1, tiempo->tm_year + 1900);

@@ -5,6 +5,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net/sntp.h>
 #include <arpa/inet.h>
+#include <zephyr/sys/timeutil.h>
 
 #include "memory.h"
 
@@ -227,8 +228,12 @@ int wifi_get_ntp(void)
   }
 
   LOG_INF("Status: %d", rv);
-  LOG_INF("Time since Epoch: high word: %u, low word: %u",
-      (uint32_t)(sntp_time.seconds >> 32), (uint32_t)sntp_time.seconds);
+
+  struct timespec tspec;
+  tspec.tv_sec = sntp_time.seconds;
+  tspec.tv_nsec= 0;
+  printk("Epoch: %lld\n", sntp_time.seconds);
+  clock_settime(CLOCK_REALTIME, &tspec);
 
   sntp_close(&ctx);
   return 0;

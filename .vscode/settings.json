@@ -13,6 +13,8 @@
         "wifi_mgmt.h": "c",
         "net_if.h": "c",
         "wifi.h": "c",
-        "ble.h": "c"
+        "ble.h": "c",
+        "local.h": "c",
+        "_tz_structs.h": "c"
     }
 }
