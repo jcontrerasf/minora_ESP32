@@ -22,6 +22,7 @@
 #include "wifi.h"
 #include "ble.h"
 #include "memory.h"
+#include "forecast.h"
 
 const int gmt_offset = -4 * MIN_PER_HOUR * SEC_PER_MIN;
 
@@ -59,6 +60,7 @@ int main(void){
 
     if(!once && wifi_is_connected()){
       wifi_get_ntp();
+      forecast_get("/fact", "https://catfact.ninja");
       once = true;
     }
 
