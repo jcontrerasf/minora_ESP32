@@ -12,14 +12,11 @@
 #define DNS_TIMEOUT (5 * MSEC_PER_SEC)
 
 #define NTP_SERVER "ntp.shoa.cl"
-#define SNTP_PORT 123
+#define SNTP_PORT "123"
 
 LOG_MODULE_REGISTER(wifi);
-K_SEM_DEFINE(dns_result_sem, 0, 1);
 
 bool got_ip = false;
-static struct sockaddr_in ntp_server_addr;
-static uint16_t dns_id;
 
 // Definir una variable global para almacenar el valor de la característica
 char wifi_ssid[WIFI_MAX_CHAR_CREDS];
@@ -32,7 +29,6 @@ bool wifi_pass_set = false;
 static struct net_mgmt_event_callback wifi_cb;
 static struct net_mgmt_event_callback ipv4_cb;
 
-static void wifi_dns_resolve();
 
 static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
 {
@@ -208,12 +204,15 @@ int wifi_get_ntp(void)
   struct sntp_time sntp_time;
   int rv;
 
-  wifi_dns_resolve();
+  struct zsock_addrinfo hints, *res;
 
-  ntp_server_addr.sin_family = AF_INET;
-  ntp_server_addr.sin_port = htons(SNTP_PORT);
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
 
-  rv = sntp_init(&ctx, (struct sockaddr *)&ntp_server_addr, sizeof(struct sockaddr_in));
+  rv = zsock_getaddrinfo(NTP_SERVER, SNTP_PORT, &hints, &res);
+
+  rv = sntp_init(&ctx, res->ai_addr, res->ai_addrlen);
   if (rv < 0) {
     LOG_ERR("Failed to init SNTP IPv4 ctx: %d", rv);
     return rv;
@@ -236,49 +235,8 @@ int wifi_get_ntp(void)
   clock_settime(CLOCK_REALTIME, &tspec);
 
   sntp_close(&ctx);
+  zsock_freeaddrinfo(res);
   return 0;
-}
-
-
-void dns_result_cb(enum dns_resolve_status status, struct dns_addrinfo *info, void *user_data) {
-  char hr_addr[NET_IPV4_ADDR_LEN];
-  void *addr;
-
-  if (status == DNS_EAI_INPROGRESS && info) {
-    if (info->ai_family == AF_INET) {
-      addr = &net_sin(&info->ai_addr)->sin_addr;
-      memcpy(&ntp_server_addr.sin_addr, addr, sizeof(struct in_addr));
-
-      net_addr_ntop(info->ai_family, addr, hr_addr, sizeof(hr_addr));
-      LOG_INF("Resolved IP address: %s", hr_addr);
-
-      /* We take the first address and cancel the query */
-      dns_cancel_addr_info(dns_id);
-      k_sem_give(&dns_result_sem); // Signal that DNS resolution is complete
-    }
-  } else if (status != DNS_EAI_CANCELED) {
-    LOG_ERR("DNS resolving failed (%d)", status);
-  }
-}
-
-
-void wifi_dns_resolve(){
-
-  static const char *query = NTP_SERVER;
-  int ret;
-
-  ret = dns_get_addr_info(query,
-        DNS_QUERY_TYPE_A,
-        &dns_id,
-        dns_result_cb,
-        (void *)query,
-        DNS_TIMEOUT);
-  if (ret < 0) {
-    LOG_ERR("Cannot resolve IPv4 address (%d)", ret);
-    return;
-  }
-
-  k_sem_take(&dns_result_sem, K_FOREVER); // Wait for DNS resolution to complete
 }
 
 bool wifi_is_connected(){

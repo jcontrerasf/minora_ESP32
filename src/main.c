@@ -60,7 +60,7 @@ int main(void){
 
     if(!once && wifi_is_connected()){
       wifi_get_ntp();
-      forecast_get("/fact", "https://catfact.ninja");
+      forecast_get("/v1/forecast?latitude=-33.4569&longitude=-70.6483", "api.open-meteo.com");
       once = true;
     }
 

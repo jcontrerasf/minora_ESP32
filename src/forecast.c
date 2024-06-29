@@ -12,128 +12,90 @@
 LOG_MODULE_REGISTER(forecast);
 
 #define MAX_RECV_BUF_LEN 512
-#define HTTP_PORT 80
+#define HTTP_PORT "80"
 
 static uint8_t recv_buf[MAX_RECV_BUF_LEN];
 
-static int setup_socket(const char *server, int port, int *sock, struct sockaddr *addr, socklen_t addr_len)
+static int setup_socket(const char *server, const char *port, int *sock)
 {
-    int ret = 0;
+  int ret = 0;
 
-    memset(addr, 0, addr_len);
-    net_sin(addr)->sin_family = AF_INET;
-    net_sin(addr)->sin_port = htons(port);
-    zsock_inet_pton(AF_INET, server, &net_sin(addr)->sin_addr);
+  struct zsock_addrinfo hints, *res;
 
-    // if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS)) {
-    //     sec_tag_t sec_tag_list[] = {
-    //         CA_CERTIFICATE_TAG,
-    //     };
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
 
-    //     *sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TLS_1_2);
-    //     if (*sock >= 0) {
-    //         ret = setsockopt(*sock, SOL_TLS, TLS_SEC_TAG_LIST,
-    //                          sec_tag_list, sizeof(sec_tag_list));
-    //         if (ret < 0) {
-    //             LOG_ERR("Failed to set secure option (%d)", -errno);
-    //             ret = -errno;
-    //         }
+  ret = zsock_getaddrinfo(server, port, &hints, &res);
+  if (ret != 0) {
+    LOG_ERR("getaddrinfo() failed: %d", ret);
+    return -EINVAL;
+  }
 
-    //         ret = setsockopt(*sock, SOL_TLS, TLS_HOSTNAME,
-    //                          TLS_PEER_HOSTNAME,
-    //                          sizeof(TLS_PEER_HOSTNAME));
-    //         if (ret < 0) {
-    //             LOG_ERR("Failed to set TLS_HOSTNAME option (%d)", -errno);
-    //             ret = -errno;
-    //         }
-    //     }
-    // } else {
-        
-    // }
-    
-    *sock = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  *sock = zsock_socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
-    if (*sock < 0) {
-        LOG_ERR("Failed to create HTTP socket (%d)", -errno);
-    }
+  if (*sock < 0) {
+    LOG_ERR("Failed to create HTTP socket (%d)", -errno);
+    zsock_freeaddrinfo(res);
+    return -errno;
+  }
 
-    return ret;
+  ret = zsock_connect(*sock, res->ai_addr, res->ai_addrlen);
+  if (ret < 0) {
+    LOG_ERR("Cannot connect to remote (%d)", -errno);
+    zsock_close(*sock);
+    *sock = -1;
+    zsock_freeaddrinfo(res);
+    return -errno;
+  }
+
+  zsock_freeaddrinfo(res);
+  return 0;
 }
 
 static void response_cb(struct http_response *rsp, enum http_final_call final_data, void *user_data)
 {
-    if (final_data == HTTP_DATA_MORE) {
-        LOG_INF("Partial data received (%zd bytes)", rsp->data_len);
-    } else if (final_data == HTTP_DATA_FINAL) {
-        LOG_INF("All the data received (%zd bytes)", rsp->data_len);
-    }
+  if (final_data == HTTP_DATA_MORE) {
+    LOG_INF("Partial data received (%zd bytes)", rsp->data_len);
+  } else if (final_data == HTTP_DATA_FINAL) {
+    LOG_INF("All the data received (%zd bytes)", rsp->data_len);
+  }
 
-    LOG_INF("Response to %s", (const char *)user_data);
-    LOG_INF("Response status %s", rsp->http_status);
-    printk("Response: %.*s\n", rsp->data_len, (char *)rsp->recv_buf);
+  LOG_INF("Response to %s", (const char *)user_data);
+  LOG_INF("Response status %s", rsp->http_status);
+  printk("Response: %.*s\n", rsp->data_len, (char *)rsp->recv_buf);
 }
 
-static int connect_socket(const char *server, int port, int *sock, struct sockaddr *addr, socklen_t addr_len)
-{
-    int ret;
-
-    ret = setup_socket(server, port, sock, addr, addr_len);
-    if (ret < 0 || *sock < 0) {
-        return -1;
-    }
-
-    ret = zsock_connect(*sock, addr, addr_len);
-    if (ret < 0) {
-        LOG_ERR("Cannot connect to remote (%d)", -errno);
-        ret = -errno;
-    }
-
-    return ret;
-}
 
 int forecast_get(const char *url, const char *server)
 {
-    struct sockaddr_in addr;
-    int sock = -1;
-    int32_t timeout = 3 * MSEC_PER_SEC;
-    int ret = 0;
-    int port = HTTP_PORT;
+  struct sockaddr_in addr;
+  int sock = -1;
+  int32_t timeout = 3 * MSEC_PER_SEC;
+  int ret = 0;
 
-    // if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS)) {
-    //     ret = tls_credential_add(CA_CERTIFICATE_TAG,
-    //                              TLS_CREDENTIAL_CA_CERTIFICATE,
-    //                              ca_certificate,
-    //                              sizeof(ca_certificate));
-    //     if (ret < 0) {
-    //         LOG_ERR("Failed to register public certificate: %d", ret);
-    //         return ret;
-    //     }
+  ret = setup_socket(server, HTTP_PORT, &sock);
+  if (sock < 0) {
+    LOG_ERR("Cannot create HTTP connection.");
+    return -ECONNABORTED;
+  }
 
-    //     port = HTTPS_PORT;
-    // }
+  struct http_request req;
+  memset(&req, 0, sizeof(req));
 
-    ret = connect_socket(server, port, &sock, (struct sockaddr *)&addr, sizeof(addr));
-    if (sock < 0) {
-        LOG_ERR("Cannot create HTTP connection.");
-        return -ECONNABORTED;
-    }
+  req.method = HTTP_GET;
+  req.url = url;
+  req.host = server;
+  req.protocol = "HTTP/1.1";
+  req.response = response_cb;
+  req.recv_buf = recv_buf;
+  req.recv_buf_len = sizeof(recv_buf);
 
-    struct http_request req;
-    memset(&req, 0, sizeof(req));
+  ret = http_client_req(sock, &req, timeout, "IPv4 GET");
 
-    req.method = HTTP_GET;
-    req.url = url;
-    req.host = server;
-    req.protocol = "HTTP/1.1";
-    req.response = response_cb;
-    req.recv_buf = recv_buf;
-    req.recv_buf_len = sizeof(recv_buf);
+  zsock_close(sock);
 
-    ret = http_client_req(sock, &req, timeout, "IPv4 GET");
-
-    zsock_close(sock);
-
-    return ret;
+  return ret;
 }
 
 /*
