@@ -1,11 +1,5 @@
 /* main.c - Application main entry point */
 
-/*
- * Copyright (c) 2015-2016 Intel Corporation
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
@@ -59,8 +53,9 @@ int main(void){
     }
 
     if(!once && wifi_is_connected()){
+      test_float();
       wifi_get_ntp();
-      forecast_get("/v1/forecast?latitude=-33.4569&longitude=-70.6483", "api.open-meteo.com");
+      forecast_get("api.open-meteo.com", "/v1/forecast?latitude=-33.4569&longitude=-70.6483&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=2");//&hourly=temperature_2m
       once = true;
     }
 

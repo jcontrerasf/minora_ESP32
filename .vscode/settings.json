@@ -15,6 +15,11 @@
         "wifi.h": "c",
         "ble.h": "c",
         "local.h": "c",
-        "_tz_structs.h": "c"
+        "_tz_structs.h": "c",
+        "bit": "c",
+        "*.tcc": "c",
+        "cmath": "c",
+        "complex": "c",
+        "random": "c"
     }
 }
