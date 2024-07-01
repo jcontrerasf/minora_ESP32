@@ -3,15 +3,20 @@
 #include <zephyr/sys/printk.h>
 #include <lvgl.h>
 
-LV_FONT_DECLARE(kode_mono_bold_20);
-LV_FONT_DECLARE(kode_mono_bold_18);
-LV_FONT_DECLARE(kode_mono_bold_24);
+#include "forecast.h"
+
+#define BASE_EPOCH 1717203600
+
+// LV_FONT_DECLARE(kode_mono_bold_20);
+// LV_FONT_DECLARE(kode_mono_bold_18);
+// LV_FONT_DECLARE(kode_mono_bold_24);
 LV_FONT_DECLARE(kode_mono_bold_26);
 
 LV_IMG_DECLARE(bluetooth_14);
 LV_IMG_DECLARE(bluetooth_16);
 
 LV_IMG_DECLARE(cloudy);
+LV_IMG_DECLARE(sunny);
 
 //Agregar soporte para inglés
 char* str_days[7]   = {"dom", "lun", "mar", "mie", "jue", "vie", "sab"};
@@ -20,6 +25,13 @@ char* str_months[12] = {"ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", 
 const struct device *display;
 static lv_obj_t * date_label;
 static lv_obj_t * bt_icon;
+static lv_obj_t * today_code;
+static lv_obj_t * tomorrow_code;
+static lv_obj_t * td_max_temp;
+static lv_obj_t * td_min_temp;
+static lv_obj_t * td_now_temp;
+static lv_obj_t * tomorrow_date;
+static lv_obj_t * tomorrow_minmax;
 
 void screen_init(){
   
@@ -40,9 +52,46 @@ void screen_init(){
   lv_disp = lv_disp_get_default();
   lv_disp_set_rotation(NULL, LV_DISP_ROT_NONE);
 
-  lv_obj_t * img1 = lv_img_create(lv_scr_act());
-  lv_img_set_src(img1, &cloudy);
-  lv_obj_align(img1, LV_ALIGN_CENTER, -100, 30);
+  static lv_style_t kode_26;
+  lv_style_init(&kode_26);
+  lv_style_set_text_font(&kode_26, &kode_mono_bold_26);
+
+  today_code = lv_img_create(lv_scr_act());
+  lv_img_set_src(today_code, &cloudy);
+  lv_obj_align(today_code, LV_ALIGN_BOTTOM_LEFT, 0, 0);
+
+  td_max_temp = lv_label_create(lv_scr_act());
+  lv_label_set_text(td_max_temp, "13 C");
+  lv_obj_align(td_max_temp, LV_ALIGN_BOTTOM_LEFT, 120, -30);
+
+
+  td_min_temp = lv_label_create(lv_scr_act());
+  lv_label_set_text(td_min_temp, "1 C");
+  lv_obj_align(td_min_temp, LV_ALIGN_BOTTOM_LEFT, 120, -10);
+
+
+  td_now_temp = lv_label_create(lv_scr_act());
+  lv_label_set_text(td_now_temp, "10");
+  lv_obj_add_style(td_now_temp, &kode_26, LV_PART_MAIN);
+  lv_obj_align(td_now_temp, LV_ALIGN_BOTTOM_LEFT, 75, -10);
+
+
+  lv_obj_t * td_now_text = lv_label_create(lv_scr_act());
+  lv_label_set_text(td_now_text, "Ahora");
+  lv_obj_align(td_now_text, LV_ALIGN_BOTTOM_LEFT, 65, -40);
+
+  tomorrow_code = lv_img_create(lv_scr_act());
+  lv_img_set_src(tomorrow_code, &sunny);
+  lv_obj_align(tomorrow_code, LV_ALIGN_BOTTOM_MID, 50, 0);
+
+
+  tomorrow_date = lv_label_create(lv_scr_act());
+  lv_label_set_text(tomorrow_date, "tmw");
+  lv_obj_align(tomorrow_date, LV_ALIGN_BOTTOM_RIGHT, -2, -40);
+
+  tomorrow_minmax = lv_label_create(lv_scr_act());
+  lv_label_set_text(tomorrow_minmax, "2 / 23");
+  lv_obj_align(tomorrow_minmax, LV_ALIGN_BOTTOM_RIGHT, -2, -10);
 
   
   bt_icon = lv_img_create(lv_scr_act());
@@ -51,13 +100,10 @@ void screen_init(){
   screen_hide_bt_icon();
 
 
-  static lv_style_t my_style;
-  lv_style_init(&my_style);
-  lv_style_set_text_font(&my_style, &kode_mono_bold_26);
 
   date_label = lv_label_create(lv_scr_act());
   lv_label_set_text(date_label, "dom 09 jun 2024");
-  lv_obj_add_style(date_label, &my_style, LV_PART_MAIN);
+  lv_obj_add_style(date_label, &kode_26, LV_PART_MAIN);
   lv_obj_align(date_label, LV_ALIGN_TOP_MID, 0, 2);
 }
 
@@ -66,8 +112,69 @@ void screen_set_date(int wday, int mday, int month, int year){
   // display_blanking_on(display);
   sprintf(date, "%s %02d %s %04d", str_days[wday], mday, str_months[month], year);
   lv_label_set_text(date_label, date);
-  display_blanking_off(display);
+  // display_blanking_off(display);
   // lv_task_handler();
+}
+
+void screen_set_tomorrow_info(int wday, int mday, int min, int max, int code){
+  char str[10];
+  sprintf(str, "%s %02d", str_days[wday], mday);
+  lv_label_set_text(tomorrow_date, str);
+
+  sprintf(str, "%d\xB0 / %d\xB0", min, max);
+  lv_label_set_text(tomorrow_minmax, str);
+
+  //code icon
+}
+
+void screen_set_today_info(int now, int min, int max, int code){
+  char str[10];
+  sprintf(str, "%d", now);//Agregar \xB0 en font   intentar centrar
+  lv_label_set_text(td_now_temp, str);
+
+  sprintf(str, "%d \xB0"  "C", min);
+  lv_label_set_text(td_min_temp, str);
+
+  sprintf(str, "%d \xB0"  "C", max);
+  lv_label_set_text(td_max_temp, str);
+
+  //code icon
+}
+
+//fuerza partial update que permite limpiar la pantalla, como complete update pero sin parpadeo molesto
+void screen_force_refresh(){
+  for(int i = 0; i<3; i++){
+    lv_label_set_text(td_max_temp, NULL);
+    lv_task_handler();
+  }
+  display_blanking_off(display);
+}
+
+void screen_update_forecast(time_t td){
+  static bool once = false; //A futuro, ejecutar cada hora
+  struct weather_data *wd = forecast_get_parsed_data();
+
+  printk("EPOCH %lld\n", td);
+
+  if(!once && wd != NULL && td > BASE_EPOCH){
+
+    td += wd->utc_offset_seconds;
+    struct tm *now = gmtime(&td);
+    screen_set_today_info(wd->hourly.temperature_2m[now->tm_hour], wd->daily.temperature_2m_min[0], wd->daily.temperature_2m_max[0], wd->daily.weather_code[0]);
+    // lv_task_handler();
+    screen_set_date(now->tm_wday, now->tm_mday, now->tm_mon, now->tm_year + 1900);
+    // lv_task_handler();
+
+    time_t tmw = td + (24*3600);
+    struct tm *tomorrow = gmtime(&tmw);
+    screen_set_tomorrow_info(tomorrow->tm_wday, tomorrow->tm_mday, wd->daily.temperature_2m_min[1], wd->daily.temperature_2m_max[1], wd->daily.weather_code[1]);
+    // lv_task_handler();
+    // display_blanking_off(display);
+    screen_force_refresh();
+    once = true;
+  }
+
+  
 }
 
 //Esto sí funciona para forzar una actualización completa
@@ -87,6 +194,6 @@ void screen_hide_bt_icon(){
   lv_obj_add_flag(bt_icon, LV_OBJ_FLAG_HIDDEN);
 }
 
-void screen_update(){
+void screen_refresh(){
   lv_task_handler();
 }

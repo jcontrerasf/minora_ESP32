@@ -40,7 +40,7 @@ int main(void){
     k_sleep(K_SECONDS(1));
     struct timespec tspec;
     clock_gettime(CLOCK_REALTIME, &tspec);
-    tspec.tv_sec += gmt_offset;
+    // tspec.tv_sec += gmt_offset;
     struct tm *tiempo;
     tiempo = gmtime(&tspec.tv_sec);
     printk("Hora: %02d:%02d:%02d del %02d/%02d/%04d\n", tiempo->tm_hour, tiempo->tm_min, tiempo->tm_sec, tiempo->tm_mday, tiempo->tm_mon + 1, tiempo->tm_year + 1900);
@@ -53,18 +53,20 @@ int main(void){
     }
 
     if(!once && wifi_is_connected()){
-      test_float();
       wifi_get_ntp();
-      forecast_get("api.open-meteo.com", "/v1/forecast?latitude=-33.4569&longitude=-70.6483&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=2");//&hourly=temperature_2m
+      forecast_get("api.open-meteo.com", "/v1/forecast?latitude=-33.4569&longitude=-70.6483&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=2&hourly=temperature_2m");
       once = true;
     }
 
-    if(last_day != tiempo->tm_mday){
-      last_day = tiempo->tm_mday;
-      screen_set_date(tiempo->tm_wday, tiempo->tm_mday, tiempo->tm_mon, tiempo->tm_year + 1900);
-    }   
+    //Esto no funciona el primer dia del mes
+    // if(last_day != tiempo->tm_mday){
+    //   last_day = tiempo->tm_mday;
+    //   screen_set_date(tiempo->tm_wday, tiempo->tm_mday, tiempo->tm_mon, tiempo->tm_year + 1900);
+      
+    // }
+    screen_update_forecast(tspec.tv_sec);
     
-    screen_update();
+    screen_refresh(); //quitar esto para evitar valores por default al inicio
 
   }
   return 0;

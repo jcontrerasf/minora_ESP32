@@ -20,6 +20,9 @@
         "*.tcc": "c",
         "cmath": "c",
         "complex": "c",
-        "random": "c"
+        "random": "c",
+        "lvgl.h": "c",
+        "screen.h": "c",
+        "json.h": "c"
     }
 }

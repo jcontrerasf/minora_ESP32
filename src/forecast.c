@@ -1,5 +1,4 @@
 #include "forecast.h"
-#include "forecast_json_defs.h"
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/data/json.h>
@@ -17,7 +16,48 @@ LOG_MODULE_REGISTER(forecast);
 
 static uint8_t recv_buf[MAX_RECV_BUF_LEN];
 
-static void forecast_parse_JSON(char *json_data);
+const struct json_obj_descr hourly_units_descr[] = {
+  JSON_OBJ_DESCR_PRIM(struct hourly_units, time, JSON_TOK_STRING),
+  JSON_OBJ_DESCR_PRIM(struct hourly_units, temperature_2m, JSON_TOK_STRING)
+};
+
+const struct json_obj_descr hourly_descr[] = {
+  JSON_OBJ_DESCR_ARRAY(struct hourly, time, 48, time_len, JSON_TOK_STRING),
+  JSON_OBJ_DESCR_ARRAY(struct hourly, temperature_2m, 48, temperature_2m_len, JSON_TOK_FLOAT),
+};
+
+const struct json_obj_descr daily_units_descr[] = {
+  JSON_OBJ_DESCR_PRIM(struct daily_units, time, JSON_TOK_STRING),
+  JSON_OBJ_DESCR_PRIM(struct daily_units, temperature_2m_max, JSON_TOK_STRING),
+  JSON_OBJ_DESCR_PRIM(struct daily_units, temperature_2m_min, JSON_TOK_STRING),
+  JSON_OBJ_DESCR_PRIM(struct daily_units, weather_code, JSON_TOK_STRING)
+};
+
+const struct json_obj_descr daily_descr[] = {
+  JSON_OBJ_DESCR_ARRAY(struct daily, time, 2, time_len, JSON_TOK_STRING),
+  JSON_OBJ_DESCR_ARRAY(struct daily, temperature_2m_max, 2, temperature_2m_max_len, JSON_TOK_FLOAT),
+  JSON_OBJ_DESCR_ARRAY(struct daily, temperature_2m_min, 2, temperature_2m_min_len, JSON_TOK_FLOAT),
+  JSON_OBJ_DESCR_ARRAY(struct daily, weather_code, 2, weather_code_len, JSON_TOK_NUMBER),
+};
+
+const struct json_obj_descr weather_data_descr[] = {
+  JSON_OBJ_DESCR_PRIM(struct weather_data, latitude, JSON_TOK_FLOAT),
+  JSON_OBJ_DESCR_PRIM(struct weather_data, longitude, JSON_TOK_FLOAT),
+  JSON_OBJ_DESCR_PRIM(struct weather_data, generationtime_ms, JSON_TOK_FLOAT),
+  JSON_OBJ_DESCR_PRIM(struct weather_data, utc_offset_seconds, JSON_TOK_NUMBER),
+  JSON_OBJ_DESCR_PRIM(struct weather_data, timezone, JSON_TOK_STRING),
+  JSON_OBJ_DESCR_PRIM(struct weather_data, timezone_abbreviation, JSON_TOK_STRING),
+  JSON_OBJ_DESCR_PRIM(struct weather_data, elevation, JSON_TOK_FLOAT),
+  JSON_OBJ_DESCR_OBJECT(struct weather_data, hourly_units, hourly_units_descr),
+  JSON_OBJ_DESCR_OBJECT(struct weather_data, hourly, hourly_descr),
+  JSON_OBJ_DESCR_OBJECT(struct weather_data, daily_units, daily_units_descr),
+  JSON_OBJ_DESCR_OBJECT(struct weather_data, daily, daily_descr)
+};
+
+struct weather_data wd;
+bool parse_ok = false;
+
+static bool forecast_parse_JSON(char *json_data);
 
 
 static int setup_socket(const char *server, const char *port, int *sock)
@@ -67,7 +107,7 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 
   LOG_INF("GET response status %s", rsp->http_status);
   // printk(strchr(rsp->recv_buf, '{'));
-  forecast_parse_JSON(strchr(rsp->recv_buf, '{'));
+  parse_ok = forecast_parse_JSON(strchr(rsp->recv_buf, '{'));
 }
 
 
@@ -103,20 +143,27 @@ int forecast_get(const char *server, const char *url)
 }
 
 
-static void forecast_parse_JSON(char *json_data){
-  struct weather_data wd;
+static bool forecast_parse_JSON(char *json_data){
 
   int ret = json_obj_parse(json_data, strlen(json_data), weather_data_descr, ARRAY_SIZE(weather_data_descr), &wd);
   if (ret < 0) {
     printk("Error parsing JSON: %d\n", ret);
+    return false;
   } else {
-    printk("Maximas: %f   %f\n", wd.daily.temperature_2m_max[0], wd.daily.temperature_2m_max[1]);
-    printk("codes: %d %d\n", wd.daily.weather_code[0], wd.daily.weather_code[1]);
-    printk("timezone: %s (%s)\n", wd.timezone, wd.timezone_abbreviation);
+    // printk("Maximas: %f   %f\n", wd.daily.temperature_2m_max[0], wd.daily.temperature_2m_max[1]);
+    // printk("codes: %d %d\n", wd.daily.weather_code[0], wd.daily.weather_code[1]);
+    // printk("timezone: %s (%s)\n", wd.timezone, wd.timezone_abbreviation);
+    return true;
   }
 }
 
-
+struct weather_data *forecast_get_parsed_data(){
+  if(parse_ok){
+    return &wd;
+  }else{
+    return NULL;
+  }
+}
 
 
 /********************************************************************************/

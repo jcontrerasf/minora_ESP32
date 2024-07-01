@@ -1,3 +1,5 @@
+#pragma once
+
 #include <zephyr/data/json.h>
 
 /******************IMPORTANT********************
@@ -21,6 +23,7 @@ que corresponde a este: https://github.com/zephyrproject-rtos/zephyr/blob/main/l
 		char *endptr;
 		*num = strtol(value->start, &endptr, 10);
 		if(*endptr == '.' && *(endptr + 1) >= '0' && *(endptr + 1) <= '9'){
+    //Esta implementación soporta un solo número decimal
 			*num += (double)((*(endptr + 1) - '0') / 10.0);
 		}else if (endptr != value->end) {
 			return -EINVAL;
@@ -81,43 +84,4 @@ struct weather_data {
   struct hourly hourly;
   struct daily_units daily_units;
   struct daily daily;
-};
-
-
-const struct json_obj_descr hourly_units_descr[] = {
-  JSON_OBJ_DESCR_PRIM(struct hourly_units, time, JSON_TOK_STRING),
-  JSON_OBJ_DESCR_PRIM(struct hourly_units, temperature_2m, JSON_TOK_STRING)
-};
-
-const struct json_obj_descr hourly_descr[] = {
-  JSON_OBJ_DESCR_ARRAY(struct hourly, time, 48, time_len, JSON_TOK_STRING),
-  JSON_OBJ_DESCR_ARRAY(struct hourly, temperature_2m, 48, temperature_2m_len, JSON_TOK_FLOAT),
-};
-
-const struct json_obj_descr daily_units_descr[] = {
-  JSON_OBJ_DESCR_PRIM(struct daily_units, time, JSON_TOK_STRING),
-  JSON_OBJ_DESCR_PRIM(struct daily_units, temperature_2m_max, JSON_TOK_STRING),
-  JSON_OBJ_DESCR_PRIM(struct daily_units, temperature_2m_min, JSON_TOK_STRING),
-  JSON_OBJ_DESCR_PRIM(struct daily_units, weather_code, JSON_TOK_STRING)
-};
-
-const struct json_obj_descr daily_descr[] = {
-  JSON_OBJ_DESCR_ARRAY(struct daily, time, 2, time_len, JSON_TOK_STRING),
-  JSON_OBJ_DESCR_ARRAY(struct daily, temperature_2m_max, 2, temperature_2m_max_len, JSON_TOK_FLOAT),
-  JSON_OBJ_DESCR_ARRAY(struct daily, temperature_2m_min, 2, temperature_2m_min_len, JSON_TOK_FLOAT),
-  JSON_OBJ_DESCR_ARRAY(struct daily, weather_code, 2, weather_code_len, JSON_TOK_NUMBER),
-};
-
-const struct json_obj_descr weather_data_descr[] = {
-  JSON_OBJ_DESCR_PRIM(struct weather_data, latitude, JSON_TOK_FLOAT),
-  JSON_OBJ_DESCR_PRIM(struct weather_data, longitude, JSON_TOK_FLOAT),
-  JSON_OBJ_DESCR_PRIM(struct weather_data, generationtime_ms, JSON_TOK_FLOAT),
-  JSON_OBJ_DESCR_PRIM(struct weather_data, utc_offset_seconds, JSON_TOK_NUMBER),
-  JSON_OBJ_DESCR_PRIM(struct weather_data, timezone, JSON_TOK_STRING),
-  JSON_OBJ_DESCR_PRIM(struct weather_data, timezone_abbreviation, JSON_TOK_STRING),
-  JSON_OBJ_DESCR_PRIM(struct weather_data, elevation, JSON_TOK_FLOAT),
-  JSON_OBJ_DESCR_OBJECT(struct weather_data, hourly_units, hourly_units_descr),
-  JSON_OBJ_DESCR_OBJECT(struct weather_data, hourly, hourly_descr),
-  JSON_OBJ_DESCR_OBJECT(struct weather_data, daily_units, daily_units_descr),
-  JSON_OBJ_DESCR_OBJECT(struct weather_data, daily, daily_descr)
 };
