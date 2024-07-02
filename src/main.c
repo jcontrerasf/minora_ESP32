@@ -31,8 +31,6 @@ int main(void){
   screen_init();
 
   wifi_init();
-
-  uint8_t last_day = 0;
   
   bool once = false;
 
@@ -53,20 +51,15 @@ int main(void){
     }
 
     if(!once && wifi_is_connected()){
+      //TODO: actualizar esto a las 00:00
       wifi_get_ntp();
       forecast_get("api.open-meteo.com", "/v1/forecast?latitude=-33.4569&longitude=-70.6483&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=2&hourly=temperature_2m");
       once = true;
     }
 
-    //Esto no funciona el primer dia del mes
-    // if(last_day != tiempo->tm_mday){
-    //   last_day = tiempo->tm_mday;
-    //   screen_set_date(tiempo->tm_wday, tiempo->tm_mday, tiempo->tm_mon, tiempo->tm_year + 1900);
-      
-    // }
     screen_update_forecast(tspec.tv_sec);
     
-    screen_refresh(); //quitar esto para evitar valores por default al inicio
+    // screen_refresh(); //quitar esto para evitar valores por default al inicio
 
   }
   return 0;

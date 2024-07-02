@@ -23,6 +23,8 @@
         "random": "c",
         "lvgl.h": "c",
         "screen.h": "c",
-        "json.h": "c"
+        "json.h": "c",
+        "chrono": "c",
+        "limits": "c"
     }
 }

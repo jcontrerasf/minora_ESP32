@@ -2,6 +2,7 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/sys/printk.h>
 #include <lvgl.h>
+#include <math.h>
 
 #include "forecast.h"
 
@@ -116,26 +117,26 @@ void screen_set_date(int wday, int mday, int month, int year){
   // lv_task_handler();
 }
 
-void screen_set_tomorrow_info(int wday, int mday, int min, int max, int code){
+void screen_set_tomorrow_info(int wday, int mday, float min, float max, int code){
   char str[10];
   sprintf(str, "%s %02d", str_days[wday], mday);
   lv_label_set_text(tomorrow_date, str);
 
-  sprintf(str, "%d\xB0 / %d\xB0", min, max);
+  sprintf(str, "%d\xB0 / %d\xB0", (int)roundf(min), (int)roundf(max));
   lv_label_set_text(tomorrow_minmax, str);
 
   //code icon
 }
 
-void screen_set_today_info(int now, int min, int max, int code){
+void screen_set_today_info(float now, float min, float max, int code){
   char str[10];
-  sprintf(str, "%d", now);//Agregar \xB0 en font   intentar centrar
+  sprintf(str, "%d", (int)roundf(now));//Agregar \xB0 en font   intentar centrar
   lv_label_set_text(td_now_temp, str);
 
-  sprintf(str, "%d \xB0"  "C", min);
+  sprintf(str, "%d \xB0"  "C", (int)roundf(min));
   lv_label_set_text(td_min_temp, str);
 
-  sprintf(str, "%d \xB0"  "C", max);
+  sprintf(str, "%d \xB0"  "C", (int)roundf(max));
   lv_label_set_text(td_max_temp, str);
 
   //code icon
@@ -143,7 +144,7 @@ void screen_set_today_info(int now, int min, int max, int code){
 
 //fuerza partial update que permite limpiar la pantalla, como complete update pero sin parpadeo molesto
 void screen_force_refresh(){
-  for(int i = 0; i<3; i++){
+  for(int i = 0; i<5; i++){
     lv_label_set_text(td_max_temp, NULL);
     lv_task_handler();
   }
@@ -151,30 +152,24 @@ void screen_force_refresh(){
 }
 
 void screen_update_forecast(time_t td){
-  static bool once = false; //A futuro, ejecutar cada hora
+  static time_t last_update = BASE_EPOCH;
   struct weather_data *wd = forecast_get_parsed_data();
 
-  printk("EPOCH %lld\n", td);
 
-  if(!once && wd != NULL && td > BASE_EPOCH){
+  if(td > BASE_EPOCH && (td - last_update >= 3600) && wd != NULL){
+
+    last_update = td - (td % 3600);
 
     td += wd->utc_offset_seconds;
     struct tm *now = gmtime(&td);
     screen_set_today_info(wd->hourly.temperature_2m[now->tm_hour], wd->daily.temperature_2m_min[0], wd->daily.temperature_2m_max[0], wd->daily.weather_code[0]);
-    // lv_task_handler();
     screen_set_date(now->tm_wday, now->tm_mday, now->tm_mon, now->tm_year + 1900);
-    // lv_task_handler();
 
     time_t tmw = td + (24*3600);
     struct tm *tomorrow = gmtime(&tmw);
     screen_set_tomorrow_info(tomorrow->tm_wday, tomorrow->tm_mday, wd->daily.temperature_2m_min[1], wd->daily.temperature_2m_max[1], wd->daily.weather_code[1]);
-    // lv_task_handler();
-    // display_blanking_off(display);
     screen_force_refresh();
-    once = true;
   }
-
-  
 }
 
 //Esto sí funciona para forzar una actualización completa
