@@ -20,6 +20,9 @@
 
 const int gmt_offset = -4 * MIN_PER_HOUR * SEC_PER_MIN;
 
+#define API_SERVER "api.open-meteo.com"
+#define API_URL "/v1/forecast?latitude=-33.4569&longitude=-70.6483&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=2&hourly=temperature_2m"
+
 int main(void){
 
   printk("Iniciando app\n");
@@ -51,11 +54,11 @@ int main(void){
     }
 
     if(!once && wifi_is_connected()){
-      //TODO: actualizar esto a las 00:00
       wifi_get_ntp();
-      forecast_get("api.open-meteo.com", "/v1/forecast?latitude=-33.4569&longitude=-70.6483&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=2&hourly=temperature_2m");
       once = true;
     }
+
+    forecast_update_data(wifi_is_connected(), tspec.tv_sec, API_SERVER, API_URL);
 
     screen_update_forecast(tspec.tv_sec);
     

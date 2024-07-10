@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(forecast);
 
 #define MAX_RECV_BUF_LEN 3000
 #define HTTP_PORT "80"
+#define API_UPDATE_INTERVAL (3600*12) //seconds
 
 static uint8_t recv_buf[MAX_RECV_BUF_LEN];
 
@@ -186,5 +187,39 @@ void test_float(void)
     printk("Failed to parse JSON: %d\n", ret);
   } else {
     printk("Parsed float number: %f\n", data.my_float_number);
+  }
+}
+
+void forecast_update_data(bool conn, time_t t_now, const char *server, const char *url){
+  static time_t last_update = 0;
+  static int64_t delay = 0;
+  static bool first_time = true;
+
+  if (!conn){
+    return;
+  }
+
+  if(!parse_ok && k_uptime_get() > delay){
+    LOG_INF("Actualizando forecast");
+    forecast_get(server, url);
+    delay = k_uptime_get() + (1000*15);
+    return;
+  }
+
+  t_now += wd.utc_offset_seconds;
+
+  if(t_now - last_update >= API_UPDATE_INTERVAL){
+
+    last_update = t_now - (t_now % API_UPDATE_INTERVAL);
+
+    if(first_time){
+      LOG_INF("First time, se actualizara a las %lld", last_update);
+      first_time = false;
+      return;
+    }
+
+    LOG_INF("Actualizando forecast");
+    forecast_get(server, url);
+
   }
 }
