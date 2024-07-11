@@ -16,8 +16,10 @@ LV_FONT_DECLARE(kode_mono_bold_26);
 LV_IMG_DECLARE(bluetooth_14);
 LV_IMG_DECLARE(bluetooth_16);
 
-LV_IMG_DECLARE(cloudy);
+LV_IMG_DECLARE(overcast);
 LV_IMG_DECLARE(sunny);
+LV_IMG_DECLARE(partly_cloudy);
+LV_IMG_DECLARE(rainy);
 
 //Agregar soporte para inglés
 char* str_days[7]   = {"dom", "lun", "mar", "mie", "jue", "vie", "sab"};
@@ -58,7 +60,7 @@ void screen_init(){
   lv_style_set_text_font(&kode_26, &kode_mono_bold_26);
 
   today_code = lv_img_create(lv_scr_act());
-  lv_img_set_src(today_code, &cloudy);
+  lv_img_set_src(today_code, &sunny);
   lv_obj_align(today_code, LV_ALIGN_BOTTOM_LEFT, 0, 0);
 
   td_max_temp = lv_label_create(lv_scr_act());
@@ -117,6 +119,27 @@ void screen_set_date(int wday, int mday, int month, int year){
   // lv_task_handler();
 }
 
+const lv_img_dsc_t *weather_code_to_icon(uint8_t code){
+  switch (code){
+  case 0:
+    return &sunny;
+    break;
+
+  case 1:
+  case 2:
+    return &partly_cloudy;
+    break;
+
+  case 3:
+    return &overcast;
+    break;
+  
+  default:
+    return &rainy;
+    break;
+  }
+}
+
 void screen_set_tomorrow_info(int wday, int mday, float min, float max, int code){
   char str[10];
   sprintf(str, "%s %02d", str_days[wday], mday);
@@ -125,7 +148,7 @@ void screen_set_tomorrow_info(int wday, int mday, float min, float max, int code
   sprintf(str, "%d\xB0 / %d\xB0", (int)roundf(min), (int)roundf(max));
   lv_label_set_text(tomorrow_minmax, str);
 
-  //code icon
+  lv_img_set_src(tomorrow_code, weather_code_to_icon(code));
 }
 
 void screen_set_today_info(float now, float min, float max, int code){
@@ -139,7 +162,7 @@ void screen_set_today_info(float now, float min, float max, int code){
   sprintf(str, "%d \xB0"  "C", (int)roundf(max));
   lv_label_set_text(td_max_temp, str);
 
-  //code icon
+  lv_img_set_src(today_code, weather_code_to_icon(code));
 }
 
 //fuerza partial update que permite limpiar la pantalla, como complete update pero sin parpadeo molesto

@@ -10,8 +10,10 @@ target_sources(app PRIVATE src/main.c)
 
 # file(GLOB ICON_SOURCES "icons/*.c")
 # target_sources(app PRIVATE ${ICON_SOURCES})
-target_sources(app PRIVATE icons/cloudy.c)
+target_sources(app PRIVATE icons/overcast.c)
 target_sources(app PRIVATE icons/sunny.c)
+target_sources(app PRIVATE icons/partly_cloudy.c)
+target_sources(app PRIVATE icons/rainy.c)
 target_sources(app PRIVATE icons/bluetooth_14.c)
 target_sources(app PRIVATE icons/kode_mono_bold_26.c)
 
