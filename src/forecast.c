@@ -17,6 +17,8 @@ LOG_MODULE_REGISTER(forecast);
 
 static uint8_t recv_buf[MAX_RECV_BUF_LEN];
 
+K_SEM_DEFINE(api_req_sem, 1, 1);
+
 const struct json_obj_descr hourly_units_descr[] = {
   JSON_OBJ_DESCR_PRIM(struct hourly_units, time, JSON_TOK_STRING),
   JSON_OBJ_DESCR_PRIM(struct hourly_units, temperature_2m, JSON_TOK_STRING)
@@ -112,8 +114,10 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 }
 
 
-int forecast_get(const char *server, const char *url)
-{
+int forecast_get(const char *server, const char *url){
+  
+  k_sem_take(&api_req_sem, K_FOREVER);
+
   struct sockaddr_in addr;
   int sock = -1;
   int32_t timeout = 10 * MSEC_PER_SEC;
@@ -147,6 +151,9 @@ int forecast_get(const char *server, const char *url)
 static bool forecast_parse_JSON(char *json_data){
 
   int ret = json_obj_parse(json_data, strlen(json_data), weather_data_descr, ARRAY_SIZE(weather_data_descr), &wd);
+
+  k_sem_give(&api_req_sem);
+
   if (ret < 0) {
     printk("Error parsing JSON: %d\n", ret);
     return false;
@@ -159,7 +166,7 @@ static bool forecast_parse_JSON(char *json_data){
 }
 
 struct weather_data *forecast_get_parsed_data(){
-  if(parse_ok){
+  if(parse_ok && k_sem_count_get(&api_req_sem)){
     return &wd;
   }else{
     return NULL;
