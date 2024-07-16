@@ -21,7 +21,7 @@
 const int gmt_offset = -4 * MIN_PER_HOUR * SEC_PER_MIN;
 
 #define API_SERVER "api.open-meteo.com"
-#define API_URL "/v1/forecast?latitude=-33.4569&longitude=-70.6483&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=2&hourly=temperature_2m"
+#define API_URL "/v1/forecast?latitude=-33.4569&longitude=-70.6483&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=2&hourly=temperature_2m,weather_code"
 
 int main(void){
 

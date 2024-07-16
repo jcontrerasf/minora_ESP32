@@ -45,13 +45,16 @@ que corresponde a este: https://github.com/zephyrproject-rtos/zephyr/blob/main/l
 struct hourly_units {
   const char *time;
   const char *temperature_2m;
+  const char *weather_code;
 };
 
 struct hourly {
   const char *time[48];
   float temperature_2m[48];
+  int weather_code[48];
   size_t time_len;
   size_t temperature_2m_len;
+  size_t weather_code_len;
 };
 
 struct daily_units {

@@ -185,7 +185,7 @@ void screen_update_forecast(time_t td){
 
     td += wd->utc_offset_seconds;
     struct tm *now = gmtime(&td);
-    screen_set_today_info(wd->hourly.temperature_2m[now->tm_hour], wd->daily.temperature_2m_min[0], wd->daily.temperature_2m_max[0], wd->daily.weather_code[0]);
+    screen_set_today_info(wd->hourly.temperature_2m[now->tm_hour], wd->daily.temperature_2m_min[0], wd->daily.temperature_2m_max[0], wd->hourly.weather_code[now->tm_hour]);
     screen_set_date(now->tm_wday, now->tm_mday, now->tm_mon, now->tm_year + 1900);
 
     time_t tmw = td + (24*3600);

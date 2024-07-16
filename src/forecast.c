@@ -21,12 +21,14 @@ K_SEM_DEFINE(api_req_sem, 1, 1);
 
 const struct json_obj_descr hourly_units_descr[] = {
   JSON_OBJ_DESCR_PRIM(struct hourly_units, time, JSON_TOK_STRING),
-  JSON_OBJ_DESCR_PRIM(struct hourly_units, temperature_2m, JSON_TOK_STRING)
+  JSON_OBJ_DESCR_PRIM(struct hourly_units, temperature_2m, JSON_TOK_STRING),
+  JSON_OBJ_DESCR_PRIM(struct daily_units, weather_code, JSON_TOK_STRING)
 };
 
 const struct json_obj_descr hourly_descr[] = {
   JSON_OBJ_DESCR_ARRAY(struct hourly, time, 48, time_len, JSON_TOK_STRING),
   JSON_OBJ_DESCR_ARRAY(struct hourly, temperature_2m, 48, temperature_2m_len, JSON_TOK_FLOAT),
+  JSON_OBJ_DESCR_ARRAY(struct hourly, weather_code, 48, weather_code_len, JSON_TOK_NUMBER),
 };
 
 const struct json_obj_descr daily_units_descr[] = {
@@ -220,7 +222,7 @@ void forecast_update_data(bool conn, time_t t_now, const char *server, const cha
     last_update = t_now - (t_now % API_UPDATE_INTERVAL);
 
     if(first_time){
-      LOG_INF("First time, se actualizara a las %lld", last_update);
+      LOG_INF("First time, se actualizara a las %lld", last_update + API_UPDATE_INTERVAL);
       first_time = false;
       return;
     }
