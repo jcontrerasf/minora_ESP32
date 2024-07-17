@@ -20,6 +20,7 @@ LV_IMG_DECLARE(overcast);
 LV_IMG_DECLARE(sunny);
 LV_IMG_DECLARE(partly_cloudy);
 LV_IMG_DECLARE(rainy);
+LV_IMG_DECLARE(fog);
 
 //Agregar soporte para inglés
 char* str_days[7]   = {"dom", "lun", "mar", "mie", "jue", "vie", "sab"};
@@ -132,6 +133,11 @@ const lv_img_dsc_t *weather_code_to_icon(uint8_t code){
 
   case 3:
     return &overcast;
+    break;
+
+  case 45:
+  case 48:
+    return &fog;
     break;
   
   default:

@@ -14,6 +14,7 @@ target_sources(app PRIVATE icons/overcast.c)
 target_sources(app PRIVATE icons/sunny.c)
 target_sources(app PRIVATE icons/partly_cloudy.c)
 target_sources(app PRIVATE icons/rainy.c)
+target_sources(app PRIVATE icons/fog.c)
 target_sources(app PRIVATE icons/bluetooth_14.c)
 target_sources(app PRIVATE icons/kode_mono_bold_26.c)
 
