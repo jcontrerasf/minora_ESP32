@@ -9,6 +9,8 @@
 
 #include "memory.h"
 
+#define RECONNECT_INTERVAL K_SECONDS(10)
+
 #define DNS_TIMEOUT (5 * MSEC_PER_SEC)
 
 #define NTP_SERVER "ntp.shoa.cl"
@@ -28,6 +30,9 @@ bool wifi_pass_set = false;
 
 static struct net_mgmt_event_callback wifi_cb;
 static struct net_mgmt_event_callback ipv4_cb;
+
+static struct k_work_delayable reconnect_work;
+static void reconnect_work_handler(struct k_work *work);
 
 
 static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
@@ -54,7 +59,8 @@ static void handle_wifi_disconnect_result(struct net_mgmt_event_callback *cb)
   }
   else
   {
-    printk("Disconnected\n");
+    LOG_INF("WiFi disconnected, scheduling reconnection...");
+    k_work_schedule(&reconnect_work, RECONNECT_INTERVAL);
   }
 }
 
@@ -85,7 +91,7 @@ static void handle_ipv4_result(struct net_if *iface)
   }
 
   got_ip = true;
-
+  k_work_cancel_delayable(&reconnect_work); // Cancelar reintentos si se conecta con éxito
 }
 
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event, struct net_if *iface)
@@ -185,16 +191,21 @@ void wifi_init(){
   temp_ssid = memory_check_wifi_ssid();
   if(temp_ssid != NULL){
     memcpy(wifi_ssid, temp_ssid, strlen(temp_ssid));
-    LOG_INF("copiando %s len: %d", temp_ssid, strlen(temp_ssid));
+    // LOG_INF("copiando %s len: %d", temp_ssid, strlen(temp_ssid));
     wifi_ssid_set = true;
   }
 
   temp_pass = memory_check_wifi_pass();
   if(temp_pass != NULL){
     memcpy(wifi_pass, temp_pass, strlen(temp_pass));
-    LOG_INF("copiando %s len: %d", temp_pass, strlen(temp_pass));
+    // LOG_INF("copiando %s len: %d", temp_pass, strlen(temp_pass));
     wifi_pass_set = true;
   }
+
+  k_work_init_delayable(&reconnect_work, reconnect_work_handler);
+
+  LOG_INF("Attempting initial connection to WiFi...");
+  // reconnect_work_handler(NULL);
 }
 
 
@@ -241,4 +252,12 @@ int wifi_get_ntp(void)
 
 bool wifi_is_connected(){
   return got_ip;
+}
+
+static void reconnect_work_handler(struct k_work *work){
+  if(wifi_ssid_set && wifi_pass_set){
+    if(!wifi_connect(wifi_ssid, strlen(wifi_ssid), wifi_pass, strlen(wifi_pass))){
+      k_work_schedule(&reconnect_work, RECONNECT_INTERVAL);
+    }
+  }
 }

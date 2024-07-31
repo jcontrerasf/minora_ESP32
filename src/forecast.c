@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(forecast);
 
 #define MAX_RECV_BUF_LEN 3000
 #define HTTP_PORT "80"
-#define API_UPDATE_INTERVAL (3600*12) //seconds
+#define API_UPDATE_INTERVAL (3600*6) //seconds
 
 static uint8_t recv_buf[MAX_RECV_BUF_LEN];
 
