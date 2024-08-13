@@ -60,6 +60,7 @@ static void handle_wifi_disconnect_result(struct net_mgmt_event_callback *cb)
   else
   {
     LOG_INF("WiFi disconnected, scheduling reconnection...");
+    got_ip = false;
     k_work_schedule(&reconnect_work, RECONNECT_INTERVAL);
   }
 }

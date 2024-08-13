@@ -25,6 +25,10 @@
         "screen.h": "c",
         "json.h": "c",
         "chrono": "c",
-        "limits": "c"
+        "limits": "c",
+        "tls_credentials.h": "c",
+        "socket.h": "c",
+        "forecast.h": "c",
+        "forecast_json_defs.h": "c"
     }
 }

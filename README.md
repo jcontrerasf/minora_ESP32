@@ -16,4 +16,9 @@ The big problem with this approach is that I need to manually convert every glyp
 ### Zephyr display API and LVGL
 Later, I started the "Zephyr-way" approach, i.e., describing the display in the devicetree file and using their APIs.
 
-After a lot of tries and research, I finally got a working display using LVGL.
+After many attempts and research, I finally got a working display using LVGL. This is the current state of the project:
+
+![Zephyr and LVGL forecast display](screen.jpg)
+
+## Important!
+As I described in the file `src/forecast_json_defs.h`, I had to modify some functions of the Zephyr source code to parse the float values returned by the OpenMeteo API, since the Zephyr JSON implementation doesn't support floats. Please refer to the instructions in that file if you want to parse floats as well. Essentially, you just need to modify two functions: `decode_value()` and `get_elem_size()`.

@@ -24,6 +24,7 @@ que corresponde a este: https://github.com/zephyrproject-rtos/zephyr/blob/main/l
 		*num = strtol(value->start, &endptr, 10);
 		if(*endptr == '.' && *(endptr + 1) >= '0' && *(endptr + 1) <= '9'){
     //Esta implementación soporta un solo número decimal
+    //This implementation supports just one decimal place
 			*num += (double)((*(endptr + 1) - '0') / 10.0);
 		}else if (endptr != value->end) {
 			return -EINVAL;

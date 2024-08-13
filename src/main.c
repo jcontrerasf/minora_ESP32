@@ -46,12 +46,6 @@ int main(void){
     tiempo = gmtime(&tspec.tv_sec);
     printk("Hora: %02d:%02d:%02d del %02d/%02d/%04d\n", tiempo->tm_hour, tiempo->tm_min, tiempo->tm_sec, tiempo->tm_mday, tiempo->tm_mon + 1, tiempo->tm_year + 1900);
     printk("get epoch: %lld\n", tspec.tv_sec);
-    if(wifi_ssid_set && wifi_pass_set){
-      if(wifi_connect(wifi_ssid, strlen(wifi_ssid), wifi_pass, strlen(wifi_pass))){
-        wifi_ssid_set = false;
-        wifi_pass_set = false;
-      }
-    }
 
     if(!once && wifi_is_connected()){
       wifi_get_ntp();
