@@ -206,7 +206,7 @@ void wifi_init(){
   k_work_init_delayable(&reconnect_work, reconnect_work_handler);
 
   LOG_INF("Attempting initial connection to WiFi...");
-  // reconnect_work_handler(NULL);
+  reconnect_work_handler(NULL);
 }
 
 
