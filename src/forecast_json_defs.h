@@ -11,26 +11,26 @@ que corresponde a este: https://github.com/zephyrproject-rtos/zephyr/blob/main/l
 			    const struct json_obj_descr *descr,
 			    struct json_token *value, void *field, void *val)
 
-  case JSON_TOK_OPAQUE: {
-		struct json_obj_token *obj_token = field;
+case JSON_TOK_OPAQUE: {
+  struct json_obj_token *obj_token = field;
 
-		obj_token->start = value->start;
-		obj_token->length = value->end - value->start;
-		return 0;
-	}
-	case JSON_TOK_FLOAT: {
-		float *num = field;
-		char *endptr;
-		*num = strtol(value->start, &endptr, 10);
-		if(*endptr == '.' && *(endptr + 1) >= '0' && *(endptr + 1) <= '9'){
-    //Esta implementación soporta un solo número decimal
-    //This implementation supports just one decimal place
-			*num += (double)((*(endptr + 1) - '0') / 10.0);
-		}else if (endptr != value->end) {
-			return -EINVAL;
-		}
-		return 0;
-	}
+  obj_token->start = value->start;
+  obj_token->length = value->end - value->start;
+  return 0;
+}
+case JSON_TOK_FLOAT: {
+  float *num = field;
+  char *endptr;
+  *num = strtol(value->start, &endptr, 10);
+  if(*endptr == '.' && *(endptr + 1) >= '0' && *(endptr + 1) <= '9'){
+  //Esta implementación soporta un solo número decimal
+  //This implementation supports just one decimal place
+    *num += (double)((*(endptr + 1) - '0') / 10.0);
+  }else if (endptr != value->end) {
+    return -EINVAL;
+  }
+  return 0;
+}
 
 
 - En la función: static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)

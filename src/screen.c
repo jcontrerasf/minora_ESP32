@@ -1,4 +1,5 @@
 #include "screen.h"
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/sys/printk.h>
 #include <lvgl.h>
@@ -7,6 +8,8 @@
 #include "forecast.h"
 
 #define BASE_EPOCH 1717203600
+
+bool info_ready = false;
 
 // LV_FONT_DECLARE(kode_mono_bold_20);
 // LV_FONT_DECLARE(kode_mono_bold_18);
@@ -28,6 +31,7 @@ char* str_months[12] = {"ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", 
 
 const struct device *display;
 static lv_obj_t * date_label;
+static lv_obj_t * indoor_sensor;
 static lv_obj_t * bt_icon;
 static lv_obj_t * today_code;
 static lv_obj_t * tomorrow_code;
@@ -63,6 +67,10 @@ void screen_init(){
   today_code = lv_img_create(lv_scr_act());
   lv_img_set_src(today_code, &sunny);
   lv_obj_align(today_code, LV_ALIGN_BOTTOM_LEFT, 0, 0);
+
+  indoor_sensor = lv_label_create(lv_scr_act());
+  lv_label_set_text(indoor_sensor, "indoor");
+  lv_obj_align(indoor_sensor, LV_ALIGN_CENTER, 0, -15);
 
   td_max_temp = lv_label_create(lv_scr_act());
   lv_label_set_text(td_max_temp, "13 C");
@@ -198,6 +206,8 @@ void screen_update_forecast(time_t td){
     struct tm *tomorrow = gmtime(&tmw);
     screen_set_tomorrow_info(tomorrow->tm_wday, tomorrow->tm_mday, wd->daily.temperature_2m_min[1], wd->daily.temperature_2m_max[1], wd->daily.weather_code[1]);
     screen_force_refresh();
+
+    info_ready = true;
   }
 }
 
@@ -209,6 +219,23 @@ void screen_update_forecast(time_t td){
     //     lv_task_handler();
     // }
 
+
+void screen_set_indoor_sensor(float temp, float hum){
+  static int64_t last_indoor_update = 0;
+  
+  if(last_indoor_update == 0 || (k_uptime_get() - last_indoor_update) >= 30000){
+    last_indoor_update = k_uptime_get();
+
+    char str[30];
+    sprintf(str, "%0.2f C    %0.2f %%", temp, hum);
+    lv_label_set_text(indoor_sensor, str);
+
+    if(info_ready){
+      // lv_task_handler();
+      screen_force_refresh();
+    }  
+  }
+}
 
 void screen_show_bt_icon(){
   lv_obj_clear_flag(bt_icon, LV_OBJ_FLAG_HIDDEN);
